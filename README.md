@@ -94,10 +94,19 @@ work because service workers need a real server.)
 
 ## Deploying
 
-Any Netlify site linked to this repo works: leave the build command empty and
-set the publish directory to `/`. Netlify auto-detects the functions in
-`netlify/`, and `package.json` makes it install the one dependency. Then set
-`TRIP_PASSWORD` (above).
+Netlify auto-deploys this repo on every push to `main`. The one-time setup is
+linking the repo: Netlify → project → **Site configuration → Build & deploy →
+Continuous deployment → Link repository** → pick `marisaweisberger/tabi`.
+Build settings come from [`netlify.toml`](netlify.toml) — accept the defaults
+it fills in. Then set `TRIP_PASSWORD` (above).
+
+The "build" just copies the app files into `_site/` — the trip data doesn't
+live in deploys at all anymore (it's in Netlify Blobs, which survives every
+deploy untouched), so there's nothing to carry forward and no way for a deploy
+to clobber it. Netlify auto-detects the functions in `netlify/`, and
+`package.json` makes it install their one dependency. If you add a new file
+the app needs, add it to the `cp` list in `netlify.toml` (and to the shell
+list in `sw.js` if it should work offline).
 
 Bump the `CACHE` version in `sw.js` when you change the app shell, so phones
 pick up the new version instead of a cached one.

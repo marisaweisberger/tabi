@@ -1,0 +1,20 @@
+# Netlify build settings — picked up automatically once this repo is linked
+# to the site (Site configuration → Build & deploy → Link repository).
+#
+# The "build" just copies the app shell into _site/ so the publish folder
+# holds only what the app needs (no README, scripts, or config).
+#
+# The trip content is NOT part of any deploy: it lives in Netlify Blobs and
+# is served by netlify/functions/trip-data.mts, so deploys can never clobber
+# it and it never touches this public repo. The whole site sits behind
+# netlify/edge-functions/gate.ts, which checks the TRIP_PASSWORD environment
+# variable (set it in Site configuration → Environment variables). Both are
+# auto-detected from the netlify/ folder — no config needed here.
+
+[build]
+  publish = "_site"
+  command = '''
+    set -e
+    mkdir -p _site
+    cp index.html sw.js manifest.json icon.svg _site/
+  '''
