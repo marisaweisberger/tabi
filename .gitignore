@@ -5,3 +5,6 @@ trip-data.js
 # Python
 __pycache__/
 *.pyc
+
+# Netlify build output (assembled by netlify.toml's build command)
+_site/

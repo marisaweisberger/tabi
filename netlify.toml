@@ -1,0 +1,21 @@
+# Netlify build settings — picked up automatically once this repo is linked
+# to the site (Site configuration → Build & deploy → Link repository).
+#
+# The site itself is plain static files, but we can't deploy the repo root
+# as-is: trip-data.js (the real trip content) is gitignored because this repo
+# is public, yet the live site needs it — sw.js even lists it in the offline
+# shell. So the "build" assembles a _site/ folder from the app files and
+# carries trip-data.js forward by downloading it from the currently-live
+# deploy ($URL is the site's own URL, provided by Netlify during builds).
+# If that fetch ever fails (e.g. very first deploy of a brand-new site),
+# the committed template is used instead so the deploy still works.
+
+[build]
+  publish = "_site"
+  command = """
+    set -e
+    mkdir -p _site
+    cp index.html sw.js manifest.json icon.svg _site/
+    curl -fsSL "$URL/trip-data.js" -o _site/trip-data.js \
+      || cp trip-data.example.js _site/trip-data.js
+  """
