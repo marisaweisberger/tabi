@@ -1,0 +1,8 @@
+{
+  "name": "tabi",
+  "private": true,
+  "description": "Shared trip command center PWA. No build step — package.json exists only so Netlify installs the function dependencies.",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

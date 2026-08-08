@@ -1,6 +1,12 @@
 # The real trip content — confirmation numbers, addresses, travel dates.
-# This repo is public, so it stays out. Start from trip-data.example.js.
+# This repo is public, so it stays out. The real trip lives in Netlify Blobs
+# (see README) — these local copies are only for seeding or backups.
 trip-data.js
+trip-data.json
+
+# Netlify function dependencies
+node_modules/
+.netlify/
 
 # Python
 __pycache__/

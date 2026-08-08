@@ -1,0 +1,32 @@
+{
+  "_comment": "The shape of the trip JSON that lives in the server storage (/api/trip-data). This is only an example — the real trip is never committed to this public repo. Easiest way in: paste JSON like this into Settings → Trip data inside the app and hit save. Or from a terminal: curl -X POST -H 'Content-Type: application/json' -H 'X-Tabi-Password: YOUR_PASSWORD' --data @trip-data.json https://YOUR-SITE.netlify.app/api/trip-data",
+  "title": "Japan 2026",
+  "departDate": "2026-09-13",
+  "regions": [
+    {
+      "name": "Tokyo",
+      "dates": "Sep 13–17 · 4 nights",
+      "transfer": false,
+      "days": [
+        {
+          "d": "SEP 13 · SUN",
+          "p": "Arrive, check in, dinner nearby.",
+          "n": "Optional highlighted note.",
+          "transit": [
+            { "from": "Airport", "to": "Central station", "via": "Airport express", "time": "~55 min", "note": "Optional extra line" }
+          ]
+        }
+      ]
+    }
+  ],
+  "bookings": [
+    { "id": "flights", "t": "Flights", "m": "Details, dates, links.", "u": "" },
+    { "id": "hotel", "t": "Book a hotel", "m": "Still to do.", "u": "URGENT" }
+  ],
+  "food": [
+    { "r": "Tokyo", "items": [ { "t": "Dish name", "p": "Why it's worth seeking out, and where." } ] }
+  ],
+  "stays": [
+    { "name": "Hotel name", "dates": "Sep 13–17 · 4 nights", "address": "Street, city", "conf": "", "notes": "Check-in time, deadlines. Blank conf = shows as NOT BOOKED." }
+  ]
+}

@@ -127,7 +127,7 @@ main{max-width:640px;margin:0 auto;padding:16px}
 .set-card textarea,.set-card input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:12px;background:#FFFDF8}
 .set-card textarea{min-height:120px;resize:vertical}
 .set-card .btn{margin-top:12px;margin-right:8px}
-#setstatus,#jsonstatus{font-family:var(--mono);font-size:12px;margin-top:10px}
+#setstatus,#jsonstatus,#srvstatus{font-family:var(--mono);font-size:12px;margin-top:10px}
 .ok{color:var(--moss)}.err{color:var(--vermilion)}
 nav{position:fixed;bottom:0;left:0;right:0;z-index:10;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;border:0;background:none;font:inherit;cursor:pointer;padding:10px 0 8px;color:#8A93A0;font-size:11px;font-weight:500}
@@ -195,7 +195,14 @@ nav button.on .ic{color:var(--vermilion)}
 
 <section id="tab-set" class="tab">
   <div class="set-card">
-    <h3>Sync</h3>
+    <h3>Server storage</h3>
+    <p>The trip lives in this site's own storage, behind the trip password — not in any code. Saving anything on any phone updates it, and opening the app pulls the latest. To hand the whole trip over at once, paste JSON into the editor below and hit save.</p>
+    <button class="btn" id="srvsave">Save to server now</button>
+    <button class="btn ghost" id="srvload">Load from server</button>
+    <div id="srvstatus"></div>
+  </div>
+  <div class="set-card">
+    <h3>Live sync (optional)</h3>
     <p>Paste your Firebase config and pick a trip code. Same code on both phones = same trip. A new code starts a new trip.</p>
     <label>Firebase config (JSON or the snippet from the console)</label>
     <textarea id="fbconf" placeholder='{"apiKey":"...","databaseURL":"...", ...}'></textarea>
@@ -225,8 +232,10 @@ nav button.on .ic{color:var(--vermilion)}
   <button data-tab="set"><span class="ic">⚙️</span>Settings</button>
 </nav>
 
-<script src="trip-data.js"></script>
 <script>
+// Trip content is no longer shipped with the app — it loads from /api/trip-data
+// (Netlify Blobs, behind the trip password). The REGIONS/BOOKINGS/FOOD/STAYS
+// globals are only picked up if a local trip-data.js is injected for dev.
 const TEMPLATE={
  title:"Japan 2026",
  departDate:"2026-09-13",
@@ -670,8 +679,10 @@ function refreshJsonEditor(){
 function saveContent(){
  templateMode=false;
  document.getElementById("banner").style.display="none";
+ CONTENT._updatedAt=Date.now();
  store.setContent(CONTENT);
  refreshJsonEditor();
+ if(serverState!=="off")pushToServer();
 }
 function adoptContent(c){CONTENT=c;templateMode=false;renderAll()}
 function loadContent(){
@@ -697,6 +708,60 @@ document.getElementById("jsonsave").addEventListener("click",()=>{
  setJsonStatus("Saved — synced to all connected phones.",true);
 });
 function setJsonStatus(m,ok){const el=document.getElementById("jsonstatus");el.textContent=m;el.className=ok?"ok":"err"}
+
+/* ---------- Server storage (Netlify Blobs via /api/trip-data) ---------- */
+const SERVER_URL="/api/trip-data";
+let serverState="checking"; // "checking" | "on" | "off"
+let pushTimer=null;
+function setSrvStatus(m,ok){const el=document.getElementById("srvstatus");el.textContent=m;el.className=ok===undefined?"":(ok?"ok":"err")}
+function pushToServer(){
+ clearTimeout(pushTimer);
+ pushTimer=setTimeout(async()=>{
+  try{
+   const r=await fetch(SERVER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(CONTENT)});
+   if(r.ok){serverState="on";dot.classList.add("on");setSrvStatus("Saved to server · "+new Date().toLocaleTimeString(),true);}
+   else if(r.status===401){setSrvStatus("Password session expired — reload the app and enter the trip password. Changes are safe on this phone.",false);}
+   else{setSrvStatus("Server save failed ("+r.status+") — changes are safe on this phone.",false);}
+  }catch(e){setSrvStatus("Offline — changes saved on this phone; hit “Save to server now” when you're back online.",false);}
+ },800);
+}
+async function initServerSync(){
+ try{
+  const r=await fetch(SERVER_URL,{headers:{Accept:"application/json"}});
+  const isJson=(r.headers.get("content-type")||"").includes("json");
+  if(r.status===404&&isJson){ // server storage works, nothing saved there yet
+   serverState="on";dot.classList.add("on");
+   if(!templateMode)pushToServer();
+   else setSrvStatus("Connected — nothing on the server yet. Save a trip and it'll live there.",true);
+   return;
+  }
+  if(!r.ok||!isJson)throw new Error("HTTP "+r.status);
+  const server=await r.json();
+  serverState="on";dot.classList.add("on");
+  const localTs=(CONTENT&&CONTENT._updatedAt)||0,serverTs=server._updatedAt||0;
+  if(templateMode||serverTs>localTs){
+   raw.set("tabi_content",JSON.stringify(server));
+   adoptContent(server);
+  }else if(localTs>serverTs){pushToServer();}
+  setSrvStatus("Connected — trip data lives on the server.",true);
+ }catch(e){
+  serverState="off";
+  setSrvStatus("Server storage not reachable (offline, or deployed without functions) — using this phone's copy.",false);
+ }
+}
+document.getElementById("srvsave").addEventListener("click",()=>{setSrvStatus("Saving…");saveContent()});
+document.getElementById("srvload").addEventListener("click",async()=>{
+ try{
+  const r=await fetch(SERVER_URL,{headers:{Accept:"application/json"}});
+  if(r.status===404)return setSrvStatus("Nothing on the server yet.",false);
+  if(!r.ok)return setSrvStatus("Couldn't load ("+r.status+") — try reloading the app.",false);
+  const server=await r.json();
+  if(!templateMode&&!confirm("Replace the trip on this phone with the server copy?"))return;
+  store.setContent(server);
+  adoptContent(server);
+  setSrvStatus("Loaded the server copy.",true);
+ }catch(e){setSrvStatus("Couldn't reach the server — offline?",false)}
+});
 
 /* ---------- Tabs ---------- */
 document.querySelectorAll("nav button").forEach(btn=>{
@@ -748,8 +813,9 @@ document.getElementById("fboff").addEventListener("click",()=>{
 });
 
 /* ---------- Boot ---------- */
-document.getElementById("bkhint").textContent="Not synced — this trip lives on this device only. Turn on sync in Settings to share it.";
+document.getElementById("bkhint").textContent="Checkmarks and quick notes live on this device only. Turn on live sync in Settings to share those too.";
 loadContent();
+initServerSync();
 (function(){
  const saved=raw.get("tabi_sync");
  if(saved){

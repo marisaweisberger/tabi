@@ -1,9 +1,10 @@
-// Tabi service worker — v13
+// Tabi service worker — v14
 // NETWORK-FIRST for the app shell so redeploys reach phones on next launch,
 // cache fallback for offline. Cache-first only for static font CDNs.
-// API traffic (Firebase, exchange rates) is never intercepted.
-const CACHE = "tabi-v13";
-const SHELL = ["./", "./index.html", "./manifest.json", "./icon.svg", "./trip-data.js"];
+// API traffic (/api/*, /login, Firebase, exchange rates) is never intercepted,
+// and non-OK responses (like the password page's 401) are never cached.
+const CACHE = "tabi-v14";
+const SHELL = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 const STATIC_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com", "www.gstatic.com"];
 
 self.addEventListener("install", (e) => {
@@ -18,11 +19,15 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (url.origin === location.origin) {
+    // Trip data and the password gate must always hit the real server
+    if (url.pathname.startsWith("/api/") || url.pathname === "/login") return;
     // App shell: network first, cache fallback (offline on the Shinkansen still works)
     e.respondWith(
       fetch(e.request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy));
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
         return res;
       }).catch(() => caches.match(e.request))
     );

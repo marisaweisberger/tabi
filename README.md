@@ -15,58 +15,96 @@ Live at https://sparkly-lamington-19866c.netlify.app
 - **Food** — dishes to eat, by region.
 - **Currency** — ¥ ⇄ $ converter with a live rate (cached 6 hours, falls back to
   the last known rate when offline).
-- **Settings** — Firebase sync setup and the whole trip as editable JSON.
+- **Settings** — server storage, Firebase live sync, and the whole trip as
+  editable JSON.
 
 ## Files
 
 | File | What it is |
 | --- | --- |
 | `index.html` | The entire app — markup, styles, and logic in one file |
-| `trip-data.example.js` | Template for the starting trip content (`REGIONS`, `BOOKINGS`, `FOOD`, `STAYS`) |
+| `netlify/edge-functions/gate.ts` | Password gate for the whole site (see below) |
+| `netlify/functions/trip-data.mts` | API that stores the trip JSON in Netlify Blobs |
+| `trip-data.example.json` | Example of the trip JSON shape |
 | `sw.js` | Service worker: network-first app shell, cache fallback for offline |
 | `manifest.json` | PWA manifest (name, colors, icons) |
 | `icon.svg` | App icon — a torii gate |
+| `package.json` | Only exists so Netlify installs `@netlify/blobs` for the function |
 
-No build step, no dependencies. Firebase is loaded from a CDN at runtime only if
-you turn sync on.
+No build step. Firebase is loaded from a CDN at runtime only if you turn live
+sync on.
+
+## How data is stored
+
+The trip content (itinerary, stays with confirmation numbers, bookings, food)
+lives in **Netlify Blobs** — the site's own key-value storage, free tier — and
+is served by `/api/trip-data`. It is **never in this public repo**.
+
+- Opening the app pulls the latest trip from the server (newest copy wins,
+  by timestamp).
+- Saving anything in the app pushes the whole trip back up automatically.
+- Each phone also keeps a copy in `localStorage`, so the app works offline;
+  it re-syncs the next time a save happens online.
+- Checkmarks and quick notes stay per-device unless Firebase live sync is on.
+
+### Putting the trip content in (no git involved)
+
+Pick whichever is easiest:
+
+1. **In the app** — just edit things. Every save goes to the server.
+2. **Paste JSON** — Settings → Trip data → paste the whole trip JSON → Save.
+   (Tip in the app: paste the JSON to Claude, describe the change, paste the
+   result back.) See `trip-data.example.json` for the shape.
+3. **From a terminal** —
+   ```bash
+   curl -X POST -H "Content-Type: application/json" \
+     -H "X-Tabi-Password: YOUR_PASSWORD" \
+     --data @trip-data.json \
+     https://YOUR-SITE.netlify.app/api/trip-data
+   ```
+
+## Password protection
+
+Netlify's built-in site password is a paid feature, so an **edge function**
+(`netlify/edge-functions/gate.ts`) does the same job on the free tier: every
+page and API request needs the trip password. Type it once and a cookie keeps
+you signed in for a year (installed home-screen apps have their own cookies, so
+you'll type it once there too).
+
+Set it up in Netlify: **Site configuration → Environment variables → Add**
+`TRIP_PASSWORD` = your shared password, then redeploy. Until the variable is
+set, the site is open — so set it before uploading the real trip.
+
+This is deliberately basic: one shared password, checked at the edge, with the
+hash in a year-long HttpOnly cookie. It keeps the public internet and search
+engines out of the trip; it is not bank-grade security, so don't put passports
+or card numbers in the trip data.
 
 ## Running it locally
 
 ```bash
-cp trip-data.example.js trip-data.js   # first time only
-python3 -m http.server 8000
+npm install
+npx netlify dev
 ```
 
-Then open http://localhost:8000. A plain `file://` open won't work — service
-workers and the manifest need a real server.
-
-## Keeping the real trip out of this repo
-
-`trip-data.js` is gitignored. It holds confirmation numbers, addresses, and the
-dates the house is empty, and this repo is public — so the real one lives only on
-Netlify and on the phones, never here. Commit `trip-data.example.js` changes
-instead when the *shape* of the data changes.
-
-## How data is stored
-
-On first load you see the built-in template from `trip-data.js`. Saving anything
-copies it into your own editable trip, kept in `localStorage`. Turning on sync in
-Settings mirrors that to a Firebase Realtime Database under a trip code — the
-same code on two phones gives both people the same live trip. Firebase
-credentials are pasted in at runtime and never stored in this repo.
+`netlify dev` runs the password gate, the trip-data function, and local Blobs
+storage. (Plain `python3 -m http.server` still works for pure UI fiddling —
+the app just falls back to device-only storage, and a `file://` open won't
+work because service workers need a real server.)
 
 ## Deploying
 
-Any static host. To make Netlify build from this repo: Netlify → project → Site
-configuration → Build & deploy → Link repository, leave the build command empty
-and set the publish directory to `/`.
+Any Netlify site linked to this repo works: leave the build command empty and
+set the publish directory to `/`. Netlify auto-detects the functions in
+`netlify/`, and `package.json` makes it install the one dependency. Then set
+`TRIP_PASSWORD` (above).
 
-Bump the `CACHE` version in `sw.js` when you change the app shell, so phones pick
-up the new version instead of a cached one.
+Bump the `CACHE` version in `sw.js` when you change the app shell, so phones
+pick up the new version instead of a cached one.
 
 ## Provenance
 
 This code was recovered from the Netlify deploy, not from an original source
 repo — see [NETLIFY_EXPORT.md](NETLIFY_EXPORT.md). `icon.svg` was redrawn to
-match the deployed icon; `icon-512.png` (referenced by the manifest) has not been
-recovered yet.
+match the deployed icon; `icon-512.png` (referenced by the manifest) has not
+been recovered yet.
