@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Tabi">
+  <rect width="512" height="512" fill="#22406B"/>
+  <g fill="#C73E2E">
+    <rect x="96"  y="126" width="320" height="42" rx="14"/>
+    <rect x="130" y="196" width="252" height="28" rx="14"/>
+    <rect x="150" y="130" width="40"  height="270" rx="16"/>
+    <rect x="322" y="130" width="40"  height="270" rx="16"/>
+  </g>
+</svg>

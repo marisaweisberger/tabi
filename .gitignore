@@ -1,0 +1,7 @@
+# The real trip content — confirmation numbers, addresses, travel dates.
+# This repo is public, so it stays out. Start from trip-data.example.js.
+trip-data.js
+
+# Python
+__pycache__/
+*.pyc
