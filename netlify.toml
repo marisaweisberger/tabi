@@ -7,15 +7,36 @@
 # shell. So the "build" assembles a _site/ folder from the app files and
 # carries trip-data.js forward by downloading it from the currently-live
 # deploy ($URL is the site's own URL, provided by Netlify during builds).
-# If that fetch ever fails (e.g. very first deploy of a brand-new site),
-# the committed template is used instead so the deploy still works.
+#
+# If the fetch fails, or the live file is just the example template, the
+# build FAILS on purpose rather than deploying the template over real data.
+# (A failed build leaves the currently-published deploy untouched.) To
+# bootstrap a brand-new site that genuinely has no trip data yet, set the
+# environment variable TRIP_DATA_ALLOW_TEMPLATE=true in Netlify and deploy
+# once, then remove it.
 
 [build]
   publish = "_site"
-  command = """
+  command = '''
     set -e
     mkdir -p _site
     cp index.html sw.js manifest.json icon.svg _site/
-    curl -fsSL "$URL/trip-data.js" -o _site/trip-data.js \
-      || cp trip-data.example.js _site/trip-data.js
-  """
+    if ! curl -fsSL "$URL/trip-data.js" -o _site/trip-data.js; then
+      if [ "$TRIP_DATA_ALLOW_TEMPLATE" = "true" ]; then
+        cp trip-data.example.js _site/trip-data.js
+      else
+        echo "ERROR: could not fetch trip-data.js from the live site."
+        echo "Refusing to deploy without the real trip data. Restore the last"
+        echo "good deploy in Netlify (Deploys -> pick it -> Publish deploy),"
+        echo "then retry this deploy. To knowingly deploy the template instead,"
+        echo "set TRIP_DATA_ALLOW_TEMPLATE=true and retry."
+        exit 1
+      fi
+    elif cmp -s _site/trip-data.js trip-data.example.js && [ "$TRIP_DATA_ALLOW_TEMPLATE" != "true" ]; then
+      echo "ERROR: the live trip-data.js is just the example template."
+      echo "Restore the last good deploy in Netlify (Deploys -> pick it ->"
+      echo "Publish deploy), then retry this deploy. To knowingly deploy the"
+      echo "template, set TRIP_DATA_ALLOW_TEMPLATE=true and retry."
+      exit 1
+    fi
+  '''

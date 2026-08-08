@@ -66,8 +66,12 @@ it fills in.
 The "build" just assembles the app files into `_site/` and carries
 `trip-data.js` forward by downloading it from the currently-live deploy, so the
 real trip data survives every deploy without ever being committed to this
-public repo. If you add a new file the app needs, add it to the `cp` list in
-`netlify.toml` (and to the shell list in `sw.js` if it should work offline).
+public repo. If that file can't be fetched — or the live copy is just the
+example template — the build fails on purpose instead of deploying the
+template over real data; fix the live site first (Netlify → Deploys → pick the
+last good deploy → **Publish deploy**) and retry. If you add a new file the
+app needs, add it to the `cp` list in `netlify.toml` (and to the shell list in
+`sw.js` if it should work offline).
 
 Bump the `CACHE` version in `sw.js` when you change the app shell, so phones pick
 up the new version instead of a cached one.
