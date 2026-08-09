@@ -135,8 +135,9 @@ export function useTrip() {
   useEffect(() => {
     const stored = getStoredContent();
     if (stored) {
-      // One-time migration from the pre-sync era: checkmarks used to live
-      // per-device under bk_* keys; now they're part of the shared trip.
+      // One-time migrations of per-device data into the shared trip:
+      // booking checkmarks used to live under bk_* keys, and quick notes
+      // under qn_<region>_<day> — both are part of the synced trip now.
       let migrated = false;
       for (const b of stored.bookings ?? []) {
         if (b.done === undefined && raw.get("bk_" + b.id) === "1") {
@@ -144,6 +145,17 @@ export function useTrip() {
           migrated = true;
         }
       }
+      (stored.regions ?? []).forEach((r, ri) =>
+        (r.days ?? []).forEach((d, di) => {
+          const key = `qn_${ri}_${di}`;
+          const note = raw.get(key);
+          if (note?.trim() && d.q === undefined) {
+            d.q = note;
+            migrated = true;
+          }
+          if (note !== null) raw.del(key);
+        }),
+      );
       contentRef.current = stored;
       setContent(stored);
       if (migrated) save((c) => c);

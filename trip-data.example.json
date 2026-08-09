@@ -12,6 +12,7 @@
           "d": "SEP 13 · SUN",
           "p": "Arrive, check in, dinner nearby.",
           "n": "Optional highlighted note.",
+          "q": "Optional quick note — free-form, added from the app, syncs to everyone.",
           "transit": [
             { "from": "Airport", "to": "Central station", "via": "Airport express", "time": "~55 min", "note": "Optional extra line" }
           ]

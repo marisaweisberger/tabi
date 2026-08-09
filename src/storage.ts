@@ -3,8 +3,10 @@ import type { TripContent } from "./types";
 // localStorage with an in-memory fallback (private browsing etc.).
 // Keys are unchanged from the pre-React app so nobody loses local data:
 //   tabi_content — offline copy of the trip
-//   qn_<region>_<day> — per-device quick notes
 //   fx_rate / fx_rate_ts — cached exchange rate
+//   qn_<region>_<day> — LEGACY per-device quick notes; migrated into the
+//     shared trip (day.q) on load, then removed
+//   bk_* — LEGACY per-device booking checkmarks; same deal (booking.done)
 
 const mem: Record<string, string> = {};
 
@@ -21,6 +23,13 @@ export const raw = {
       localStorage.setItem(k, v);
     } catch {
       mem[k] = v;
+    }
+  },
+  del(k: string): void {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      delete mem[k];
     }
   },
 };
