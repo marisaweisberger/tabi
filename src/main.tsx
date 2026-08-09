@@ -9,6 +9,8 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>,
 );
 
-if ("serviceWorker" in navigator) {
+// Dev serves an unstamped sw.js (see scripts/stamp-sw.mjs), so register
+// the service worker only in production builds.
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
   navigator.serviceWorker.register("/sw.js").catch(() => {});
 }

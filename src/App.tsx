@@ -63,7 +63,7 @@ export default function App() {
           <div className="banner">
             Viewing the built-in template. Save it as your trip to make it editable and syncable.
             <br />
-            <button onClick={() => trip.save(content)}>Save template as my trip</button>
+            <button onClick={() => trip.save((c) => c)}>Save template as my trip</button>
           </div>
         )}
 
@@ -71,28 +71,28 @@ export default function App() {
           <h2 className="page-title">
             Itinerary <span>旅程</span>
           </h2>
-          <Itinerary content={content} save={trip.save} />
+          <Itinerary regions={content.regions || []} save={trip.save} syncNonce={trip.syncNonce} />
         </section>
 
         <section className={"tab" + (tab === "stay" ? " active" : "")}>
           <h2 className="page-title">
             Stays <span>宿</span>
           </h2>
-          <Stays content={content} save={trip.save} />
+          <Stays stays={content.stays || []} save={trip.save} syncNonce={trip.syncNonce} />
         </section>
 
         <section className={"tab" + (tab === "book" ? " active" : "")}>
           <h2 className="page-title">
             Bookings <span>予約</span>
           </h2>
-          <Bookings content={content} save={trip.save} />
+          <Bookings bookings={content.bookings || []} save={trip.save} />
         </section>
 
         <section className={"tab" + (tab === "food" ? " active" : "")}>
           <h2 className="page-title">
             Food <span>食</span>
           </h2>
-          <Food content={content} />
+          <Food food={content.food || []} />
         </section>
 
         <section className={"tab" + (tab === "fx" ? " active" : "")}>

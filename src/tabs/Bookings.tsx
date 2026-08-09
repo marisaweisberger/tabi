@@ -1,27 +1,28 @@
 import { useState } from "react";
-import type { Booking, TripContent } from "../types";
+import type { Booking } from "../types";
+import type { SaveFn } from "../useTrip";
 
 // Shared checklist with a progress bar. Checkmarks are part of the trip JSON,
 // so they sync to every phone.
 
 interface Props {
-  content: TripContent;
-  save: (next: TripContent) => void;
+  bookings: Booking[];
+  save: SaveFn;
 }
 
-export default function Bookings({ content, save }: Props) {
+export default function Bookings({ bookings, save }: Props) {
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [urgent, setUrgent] = useState(false);
 
-  const bookings = content.bookings || [];
   const done = bookings.filter((b) => b.done).length;
-  const saveBookings = (next: Booking[]) => save({ ...content, bookings: next });
+  const saveBookings = (update: (cur: Booking[]) => Booking[]) =>
+    save((c) => ({ ...c, bookings: update(c.bookings || []) }));
 
   const addBooking = () => {
     const t = title.trim();
     if (!t) return;
-    saveBookings([...bookings, { id: "b" + Date.now(), t, m: details.trim(), u: urgent ? "URGENT" : "" }]);
+    saveBookings((cur) => [...cur, { id: "b" + Date.now(), t, m: details.trim(), u: urgent ? "URGENT" : "" }]);
     setTitle("");
     setDetails("");
     setUrgent(false);
@@ -42,7 +43,7 @@ export default function Bookings({ content, save }: Props) {
               type="checkbox"
               checked={!!b.done}
               aria-label={b.t}
-              onChange={(e) => saveBookings(bookings.map((x) => (x.id === b.id ? { ...x, done: e.target.checked } : x)))}
+              onChange={(e) => saveBookings((cur) => cur.map((x) => (x.id === b.id ? { ...x, done: e.target.checked } : x)))}
             />
             <div>
               {b.u && <span className="u">{b.u}</span>} <span className="t">{b.t}</span>
@@ -54,7 +55,7 @@ export default function Bookings({ content, save }: Props) {
               onClick={(e) => {
                 e.preventDefault();
                 if (!confirm(`Delete "${b.t}" for everyone on this trip?`)) return;
-                saveBookings(bookings.filter((x) => x.id !== b.id));
+                saveBookings((cur) => cur.filter((x) => x.id !== b.id));
               }}
             >
               ✕

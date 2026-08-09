@@ -1,12 +1,18 @@
-// Tabi service worker — v18
+// Tabi service worker.
 // NETWORK-FIRST for the app shell so redeploys reach phones on next launch,
 // cache fallback for offline. Cache-first only for static font CDNs.
-// Vite's hashed JS/CSS assets are cached the same network-first way as they
-// are fetched, so the whole app keeps working offline after one online visit.
 // API traffic (/api/*, /login, exchange rates) is never intercepted,
 // and non-OK responses (like the password page's 401) are never cached.
-const CACHE = "tabi-v18";
-const SHELL = ["./", "./index.html", "./manifest.json", "./icon.svg"];
+//
+// BUILD and EXTRA are stamped by scripts/stamp-sw.mjs during `npm run build`:
+// BUILD becomes a hash of the deployed files (so every deploy gets a fresh
+// cache and old hashed assets are purged), and EXTRA becomes the list of
+// Vite's hashed /assets/* files so the whole app is precached at install —
+// that's what makes the app work offline. Don't rename these two lines.
+const BUILD = "dev";
+const EXTRA = [];
+const CACHE = "tabi-" + BUILD;
+const SHELL = ["./", "./index.html", "./manifest.json", "./icon.svg", ...EXTRA];
 const STATIC_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", (e) => {
