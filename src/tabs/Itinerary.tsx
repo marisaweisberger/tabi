@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { Day, Region, TransitLeg } from "../types";
 import type { SaveFn } from "../useTrip";
 
@@ -37,6 +38,22 @@ function textToLegs(txt: string): TransitLeg[] {
 
 /** "ri_di" = editing a day, "newday_ri" = adding one, "region_ri" = region header */
 type Editing = string | null;
+
+// Wrap every occurrence of the (lowercased) search term in <mark> so it
+// stands out in the results. q must already be lowercase and non-empty.
+function highlight(text: string, q: string): ReactNode {
+  const lower = text.toLowerCase();
+  const out: ReactNode[] = [];
+  let i = 0;
+  for (let j = lower.indexOf(q); j !== -1; j = lower.indexOf(q, i)) {
+    if (j > i) out.push(text.slice(i, j));
+    out.push(<mark key={j}>{text.slice(j, j + q.length)}</mark>);
+    i = j + q.length;
+  }
+  if (!out.length) return text;
+  out.push(text.slice(i));
+  return out;
+}
 
 function DayEditor(props: { day: Day; isNew: boolean; onSave: (d: Day) => void; onCancel: () => void; onDelete?: () => void }) {
   const [d, setD] = useState(props.day.d || "");
@@ -158,6 +175,7 @@ export default function Itinerary({ regions, save, syncNonce }: Props) {
     has(d.n) ||
     has(d.q) ||
     (d.transit || []).some((l) => has(l.from) || has(l.to) || has(l.via) || has(l.time) || has(l.note));
+  const hl = (s: string | undefined): ReactNode => (q && s ? highlight(s, q) : s);
 
   const isOpen = (r: Region, ri: number) => (open ? open.has(r.name) : ri === 0);
 
@@ -252,8 +270,8 @@ export default function Itinerary({ regions, save, syncNonce }: Props) {
         <div key={ri} className={"station" + (r.transfer ? " transfer" : "") + (q || isOpen(r, ri) ? " open" : "")}>
           <button className="region-head" aria-expanded={!!q || isOpen(r, ri)} onClick={() => toggle(r)}>
             <div>
-              <h2>{r.name}</h2>
-              <span className="dates">{r.dates}</span>
+              <h2>{hl(r.name)}</h2>
+              <span className="dates">{hl(r.dates)}</span>
             </div>
             <span className="region-tools">
               <span
@@ -296,23 +314,23 @@ export default function Itinerary({ regions, save, syncNonce }: Props) {
                   <button className="editbtn" aria-label="Edit this day" onClick={() => setEditing(ri + "_" + di)}>
                     ✎
                   </button>
-                  <div className="d">{d.d}</div>
-                  <p>{d.p}</p>
-                  {d.n && <div className="note">{d.n}</div>}
+                  <div className="d">{hl(d.d)}</div>
+                  <p>{hl(d.p)}</p>
+                  {d.n && <div className="note">{hl(d.n)}</div>}
                   {d.transit && d.transit.length > 0 && (
                     <div className="transit">
                       {d.transit.map((l, li) => (
                         <div key={li} className="leg">
                           <span className="dot" />
                           <div className="route">
-                            {l.from}
+                            {hl(l.from)}
                             <span className="arr">→</span>
-                            {l.to}
+                            {hl(l.to)}
                           </div>
                           <div className="via">
-                            <b>{l.via}</b> · {l.time}
+                            <b>{hl(l.via)}</b> · {hl(l.time)}
                           </div>
-                          {l.note && <div className="lnote">{l.note}</div>}
+                          {l.note && <div className="lnote">{hl(l.note)}</div>}
                         </div>
                       ))}
                     </div>

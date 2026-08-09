@@ -37,6 +37,7 @@ main{max-width:640px;margin:0 auto;padding:20px 18px 0}
 .searchbar input::-webkit-search-cancel-button{display:none}
 .searchbar .clear{position:absolute;right:5px;top:50%;transform:translateY(-50%);border:0;background:none;font:inherit;font-size:14px;color:var(--muted);padding:8px 12px;cursor:pointer}
 .search-empty{text-align:center;color:var(--muted);font-size:13px;padding:14px 0 20px}
+.rail mark{background:#FFE28A;color:inherit;border-radius:4px;padding:0 1px}
 
 /* ---------- Itinerary rail ---------- */
 .rail{position:relative;padding-left:30px}
