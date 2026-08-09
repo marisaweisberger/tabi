@@ -1,9 +1,11 @@
-// Tabi service worker — v17
+// Tabi service worker — v18
 // NETWORK-FIRST for the app shell so redeploys reach phones on next launch,
 // cache fallback for offline. Cache-first only for static font CDNs.
+// Vite's hashed JS/CSS assets are cached the same network-first way as they
+// are fetched, so the whole app keeps working offline after one online visit.
 // API traffic (/api/*, /login, exchange rates) is never intercepted,
 // and non-OK responses (like the password page's 401) are never cached.
-const CACHE = "tabi-v17";
+const CACHE = "tabi-v18";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 const STATIC_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 

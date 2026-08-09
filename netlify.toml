@@ -1,8 +1,8 @@
 # Netlify build settings — picked up automatically once this repo is linked
 # to the site (Site configuration → Build & deploy → Link repository).
 #
-# The "build" just copies the app shell into _site/ so the publish folder
-# holds only what the app needs (no README, scripts, or config).
+# The build typechecks and bundles the React app with Vite into dist/.
+# A TypeScript error fails the build, so broken code never deploys.
 #
 # The trip content is NOT part of any deploy: it lives in Netlify Blobs and
 # is served by netlify/functions/trip-data.mts, so deploys can never clobber
@@ -12,9 +12,8 @@
 # auto-detected from the netlify/ folder — no config needed here.
 
 [build]
-  publish = "_site"
-  command = '''
-    set -e
-    mkdir -p _site
-    cp index.html sw.js manifest.json icon.svg _site/
-  '''
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"

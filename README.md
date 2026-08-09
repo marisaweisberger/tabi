@@ -22,17 +22,22 @@ Live at https://sparkly-lamington-19866c.netlify.app
 
 | File | What it is |
 | --- | --- |
-| `index.html` | The entire app — markup, styles, and logic in one file |
+| `index.html` | Entry page (fonts, meta tags); mounts the React app |
+| `src/App.tsx` | Header, tab switching, bottom nav |
+| `src/tabs/` | One file per tab: Itinerary, Stays, Bookings, Food, Currency, Settings |
+| `src/useTrip.ts` | All sync logic: auto-save, server push/pull, newest-copy-wins |
+| `src/types.ts` | TypeScript shape of the trip JSON |
+| `src/storage.ts` | localStorage helpers (offline copy, quick notes, cached fx rate) |
+| `src/index.css` | All styles — plain CSS |
+| `public/` | Copied to the site root as-is: `sw.js`, `manifest.json`, `icon.svg` |
 | `netlify/edge-functions/gate.ts` | Password gate for the whole site (see below) |
 | `netlify/functions/trip-data.mts` | API that stores the trip JSON in Netlify Blobs |
 | `trip-data.example.json` | Example of the trip JSON shape |
-| `sw.js` | Service worker: network-first app shell, cache fallback for offline |
-| `manifest.json` | PWA manifest (name, colors, icons) |
-| `icon.svg` | App icon — a torii gate |
-| `package.json` | Only exists so Netlify installs `@netlify/blobs` for the function |
 
-No build step, no frameworks, one dependency (`@netlify/blobs`, server-side
-only).
+The app is React + TypeScript, built with [Vite](https://vite.dev). Every
+push is typechecked by a GitHub Action (`.github/workflows/checks.yml`), and
+the Netlify build typechecks again before deploying — a type error can't
+reach the live site.
 
 ## How data is stored
 
@@ -92,10 +97,10 @@ npm install
 npx netlify dev
 ```
 
-`netlify dev` runs the password gate, the trip-data function, and local Blobs
-storage. (Plain `python3 -m http.server` still works for pure UI fiddling —
-the app just falls back to device-only storage, and a `file://` open won't
-work because service workers need a real server.)
+`netlify dev` runs the app, the password gate, the trip-data function, and
+local Blobs storage. For UI-only fiddling, `npm run dev` starts just the app
+(it falls back to device-only storage since there's no server), and
+`npm run typecheck` checks the TypeScript without building.
 
 ## Deploying
 
@@ -105,15 +110,14 @@ Continuous deployment → Link repository** → pick `marisaweisberger/tabi`.
 Build settings come from [`netlify.toml`](netlify.toml) — accept the defaults
 it fills in. Then set `TRIP_PASSWORD` (above).
 
-The "build" just copies the app files into `_site/` — the trip data doesn't
-live in deploys at all anymore (it's in Netlify Blobs, which survives every
-deploy untouched), so there's nothing to carry forward and no way for a deploy
-to clobber it. Netlify auto-detects the functions in `netlify/`, and
-`package.json` makes it install their one dependency. If you add a new file
-the app needs, add it to the `cp` list in `netlify.toml` (and to the shell
-list in `sw.js` if it should work offline).
+The build typechecks the code and bundles the app into `dist/` — the trip
+data doesn't live in deploys at all (it's in Netlify Blobs, which survives
+every deploy untouched), so there's nothing to carry forward and no way for a
+deploy to clobber it. Netlify auto-detects the functions in `netlify/`.
+Static files that must sit at the site root (the service worker, manifest,
+icon) live in `public/` and are copied into the deploy as-is.
 
-Bump the `CACHE` version in `sw.js` when you change the app shell, so phones
+Bump the `CACHE` version in `public/sw.js` when you change the app, so phones
 pick up the new version instead of a cached one.
 
 ## Provenance
