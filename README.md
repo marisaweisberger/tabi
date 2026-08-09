@@ -117,12 +117,13 @@ deploy to clobber it. Netlify auto-detects the functions in `netlify/`.
 Static files that must sit at the site root (the service worker, manifest,
 icon) live in `public/` and are copied into the deploy as-is.
 
-Bump the `CACHE` version in `public/sw.js` when you change the app, so phones
-pick up the new version instead of a cached one.
+The service worker's cache version is stamped automatically during the build
+(`scripts/stamp-sw.mjs`), so every deploy gets a fresh cache and phones pick
+up new versions on their next launch — no manual version bumps.
 
 ## Provenance
 
-This code was recovered from the Netlify deploy, not from an original source
-repo — see [NETLIFY_EXPORT.md](NETLIFY_EXPORT.md). `icon.svg` was redrawn to
-match the deployed icon; `icon-512.png` (referenced by the manifest) has not
-been recovered yet.
+An earlier version of this code was recovered from the Netlify deploy after
+the original source was lost. That recovery path no longer exists — deploys
+are now compiled Vite output, not source — so **this repo is the only
+source**. `icon.svg` was redrawn to match the deployed icon.

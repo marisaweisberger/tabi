@@ -1,5 +1,6 @@
-import { useState } from "react";
-import type { Day, Region, TransitLeg, TripContent } from "../types";
+import { useEffect, useState } from "react";
+import type { Day, Region, TransitLeg } from "../types";
+import type { SaveFn } from "../useTrip";
 import { raw } from "../storage";
 
 // Regions on the train-rail timeline, each with editable days.
@@ -7,8 +8,10 @@ import { raw } from "../storage";
 // personal and stay on this device (localStorage, key qn_<region>_<day>).
 
 interface Props {
-  content: TripContent;
-  save: (next: TripContent) => void;
+  regions: Region[];
+  save: SaveFn;
+  /** Bumps when a newer copy arrives from the server — discard open edits. */
+  syncNonce: number;
 }
 
 function legsToText(t: TransitLeg[] | undefined): string {
@@ -119,12 +122,15 @@ function QuickNote(props: { storageKey: string }) {
   );
 }
 
-export default function Itinerary({ content, save }: Props) {
+export default function Itinerary({ regions, save, syncNonce }: Props) {
   // null = default (first region open); afterwards open regions are tracked by name.
   const [open, setOpen] = useState<Set<string> | null>(null);
   const [editing, setEditing] = useState<Editing>(null);
 
-  const regions = content.regions || [];
+  // A newer copy from the server may have reordered or removed things, so an
+  // open editor could save over the wrong day/region — close it instead.
+  useEffect(() => setEditing(null), [syncNonce]);
+
   const isOpen = (r: Region, ri: number) => (open ? open.has(r.name) : ri === 0);
 
   const toggle = (r: Region) => {
@@ -134,34 +140,36 @@ export default function Itinerary({ content, save }: Props) {
     setOpen(next);
   };
 
-  const saveRegions = (next: Region[]) => {
+  const saveRegions = (update: (cur: Region[]) => Region[]) => {
     setEditing(null);
-    save({ ...content, regions: next });
+    save((c) => ({ ...c, regions: update(c.regions || []) }));
   };
 
-  const updateRegion = (ri: number, r: Region) => saveRegions(regions.map((x, i) => (i === ri ? r : x)));
+  const updateRegion = (ri: number, r: Region) => saveRegions((cur) => cur.map((x, i) => (i === ri ? r : x)));
 
-  const saveDay = (ri: number, di: number, day: Day, isNew: boolean) => {
-    const r = regions[ri];
-    const days = [...(r.days || [])];
-    if (isNew) days.push(day);
-    else days[di] = day;
-    updateRegion(ri, { ...r, days });
-  };
+  const saveDay = (ri: number, di: number, day: Day, isNew: boolean) =>
+    saveRegions((cur) =>
+      cur.map((r, i) => {
+        if (i !== ri) return r;
+        const days = [...(r.days || [])];
+        if (isNew) days.push(day);
+        else days[di] = day;
+        return { ...r, days };
+      }),
+    );
 
   const deleteDay = (ri: number, di: number) => {
     if (!confirm("Delete this day for everyone on the trip?")) return;
-    const r = regions[ri];
-    updateRegion(ri, { ...r, days: (r.days || []).filter((_, i) => i !== di) });
+    saveRegions((cur) => cur.map((r, i) => (i === ri ? { ...r, days: (r.days || []).filter((_, x) => x !== di) } : r)));
   };
 
   const deleteRegion = (ri: number) => {
     if (!confirm(`Delete the whole "${regions[ri].name}" region and its days for everyone?`)) return;
-    saveRegions(regions.filter((_, i) => i !== ri));
+    saveRegions((cur) => cur.filter((_, i) => i !== ri));
   };
 
   const addRegion = () => {
-    save({ ...content, regions: [...regions, { name: "New region", dates: "", transfer: false, days: [] }] });
+    save((c) => ({ ...c, regions: [...(c.regions || []), { name: "New region", dates: "", transfer: false, days: [] }] }));
     setEditing("region_" + regions.length);
   };
 

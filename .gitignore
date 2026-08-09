@@ -1,6 +1,7 @@
 # The real trip content — confirmation numbers, addresses, travel dates.
 # This repo is public, so it stays out. The real trip lives in Netlify Blobs
-# (see README) — these local copies are only for seeding or backups.
+# (see README) — a local trip-data.json is only ever a backup to POST to
+# /api/trip-data with curl; nothing in the app reads these files.
 trip-data.js
 trip-data.json
 

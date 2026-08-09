@@ -1,9 +1,7 @@
 # Typecheck + build on every push. The same `npm run build` also runs on
 # Netlify before deploying, so a red ✗ here means the deploy failed too.
 name: checks
-on:
-  push:
-  pull_request:
+on: push
 jobs:
   typecheck-and-build:
     runs-on: ubuntu-latest

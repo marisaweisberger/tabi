@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { isTripContent, type TripContent } from "../types";
-import type { ServerStatus } from "../useTrip";
+import type { SaveFn, ServerStatus } from "../useTrip";
 
 // The whole trip as one auto-saving JSON editor. Stop typing for a moment and
 // valid JSON is adopted and synced; invalid JSON shows what's wrong and
@@ -8,13 +8,14 @@ import type { ServerStatus } from "../useTrip";
 
 interface Props {
   content: TripContent;
-  save: (next: TripContent) => void;
+  save: SaveFn;
   status: ServerStatus;
 }
 
 export default function Settings({ content, save, status }: Props) {
   const [text, setText] = useState(() => JSON.stringify(content, null, 2));
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
   const focused = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -43,11 +44,14 @@ export default function Settings({ content, save, status }: Props) {
         return;
       }
       setJsonError(null);
-      save(parsed);
+      save(() => parsed);
     }, 1200);
   };
 
-  const shown = jsonError ?? status.msg;
+  // While someone is typing, only their own feedback (errors, "Saved…")
+  // belongs here — background sync chatter would be misleading mid-edit.
+  const showStatus = !isFocused || status.msg.startsWith("Saved");
+  const shown = jsonError ?? (showStatus ? status.msg : "");
   const cls = jsonError ? "err" : status.ok === undefined ? "" : status.ok ? "ok" : "err";
 
   return (
@@ -65,8 +69,14 @@ export default function Settings({ content, save, status }: Props) {
         autoComplete="off"
         value={text}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => (focused.current = true)}
-        onBlur={() => (focused.current = false)}
+        onFocus={() => {
+          focused.current = true;
+          setIsFocused(true);
+        }}
+        onBlur={() => {
+          focused.current = false;
+          setIsFocused(false);
+        }}
       />
       <div id="srvstatus" className={cls}>{shown}</div>
     </div>

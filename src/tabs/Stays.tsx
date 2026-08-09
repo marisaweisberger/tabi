@@ -1,11 +1,14 @@
-import { useState } from "react";
-import type { Stay, TripContent } from "../types";
+import { useEffect, useState } from "react";
+import type { Stay } from "../types";
+import type { SaveFn } from "../useTrip";
 
 // Hotels and ryokan. A blank confirmation number shows as NOT BOOKED (dashed).
 
 interface Props {
-  content: TripContent;
-  save: (next: TripContent) => void;
+  stays: Stay[];
+  save: SaveFn;
+  /** Bumps when a newer copy arrives from the server — discard open edits. */
+  syncNonce: number;
 }
 
 function StayEditor(props: { stay: Stay; onSave: (s: Stay) => void; onCancel: () => void }) {
@@ -28,7 +31,9 @@ function StayEditor(props: { stay: Stay; onSave: (s: Stay) => void; onCancel: ()
           <button
             className="btn sm"
             onClick={() =>
+              // Spread keeps any extra fields pasted in via the JSON editor.
               props.onSave({
+                ...s,
                 name: (s.name ?? "").trim(),
                 dates: (s.dates ?? "").trim(),
                 address: (s.address ?? "").trim(),
@@ -46,21 +51,22 @@ function StayEditor(props: { stay: Stay; onSave: (s: Stay) => void; onCancel: ()
   );
 }
 
-export default function Stays({ content, save }: Props) {
+export default function Stays({ stays, save, syncNonce }: Props) {
   const [editing, setEditing] = useState<number | null>(null);
   const [draft, setDraft] = useState({ name: "", dates: "", address: "", conf: "", notes: "" });
 
-  const stays = content.stays || [];
-  const saveStays = (next: Stay[]) => {
-    setEditing(null);
-    save({ ...content, stays: next });
-  };
+  // A newer copy from the server may have reordered or removed stays, so an
+  // open editor could save over the wrong one — close it instead.
+  useEffect(() => setEditing(null), [syncNonce]);
+
+  const saveStays = (update: (cur: Stay[]) => Stay[]) =>
+    save((c) => ({ ...c, stays: update(c.stays || []) }));
 
   const addStay = () => {
     const name = draft.name.trim();
     if (!name) return;
-    saveStays([
-      ...stays,
+    saveStays((cur) => [
+      ...cur,
       {
         name,
         dates: draft.dates.trim(),
@@ -74,7 +80,8 @@ export default function Stays({ content, save }: Props) {
 
   const deleteStay = (i: number) => {
     if (!confirm(`Delete "${stays[i].name || "this stay"}" for everyone?`)) return;
-    saveStays(stays.filter((_, x) => x !== i));
+    setEditing(null);
+    saveStays((cur) => cur.filter((_, x) => x !== i));
   };
 
   return (
@@ -89,7 +96,10 @@ export default function Stays({ content, save }: Props) {
               <StayEditor
                 key={i}
                 stay={s}
-                onSave={(next) => saveStays(stays.map((x, xi) => (xi === i ? next : x)))}
+                onSave={(next) => {
+                  setEditing(null);
+                  saveStays((cur) => cur.map((x, xi) => (xi === i ? next : x)));
+                }}
                 onCancel={() => setEditing(null)}
               />
             );

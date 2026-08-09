@@ -83,10 +83,11 @@ deploy isn't bricked — don't "fix" that. Files excluded from the gate
 
 ## Gotchas that will bite you
 
-- **Bump `CACHE` in `public/sw.js`** (v18 → v19 → …) whenever you change the
-  app or anything in `public/` — otherwise phones keep the old cached
-  version. Vite's hashed assets change name on their own, but the service
-  worker only clears old caches when the version bumps.
+- The service-worker cache version is stamped automatically at build time
+  (`scripts/stamp-sw.mjs` hashes the deployed files and injects the hashed
+  asset list) — **no manual `CACHE` bumps needed anymore**. Just don't
+  rename the `const BUILD = "dev"` / `const EXTRA = []` placeholder lines
+  in `public/sw.js`; the stamp script errors if it can't find them.
 - New static files that must exist at the site root go in `public/`
   (Vite copies them into the deploy automatically). Consider whether the
   gate's `excludedPath` in `gate.ts` applies — excluded files are public.

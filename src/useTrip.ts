@@ -27,11 +27,17 @@ export interface ServerStatus {
   ok?: boolean;
 }
 
+/** Tabs save with an updater on the CURRENT trip, never a stale snapshot. */
+export type SaveFn = (update: (cur: TripContent) => TripContent) => void;
+
 export function useTrip() {
   const [content, setContent] = useState<TripContent | null>(null);
   const [templateMode, setTemplateMode] = useState(false);
   const [serverState, setServerState] = useState<ServerState>("checking");
   const [status, setStatus] = useState<ServerStatus>({ msg: "" });
+  // Bumped whenever a newer copy is adopted from the server, so tabs can
+  // discard in-progress edits that might otherwise target shifted items.
+  const [syncNonce, setSyncNonce] = useState(0);
 
   // Refs mirror state for use inside debounced/async callbacks.
   const contentRef = useRef<TripContent | null>(null);
@@ -72,9 +78,10 @@ export function useTrip() {
   }, [markServer]);
 
   /** The one way to change the trip. Stamps, stores locally, and syncs. */
-  const save = useCallback(
-    (next: TripContent) => {
-      const stamped = { ...next, _updatedAt: Date.now() };
+  const save = useCallback<SaveFn>(
+    (update) => {
+      if (!contentRef.current) return;
+      const stamped = { ...update(contentRef.current), _updatedAt: Date.now() };
       templateModeRef.current = false;
       setTemplateMode(false);
       contentRef.current = stamped;
@@ -91,6 +98,7 @@ export function useTrip() {
     setContent(server);
     templateModeRef.current = false;
     setTemplateMode(false);
+    setSyncNonce((n) => n + 1);
   }, []);
 
   /** Pull the latest from the server; newest _updatedAt wins. */
@@ -138,7 +146,7 @@ export function useTrip() {
       }
       contentRef.current = stored;
       setContent(stored);
-      if (migrated) save(stored);
+      if (migrated) save((c) => c);
     } else {
       const t = structuredClone(TEMPLATE);
       contentRef.current = t;
@@ -157,5 +165,5 @@ export function useTrip() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { content, templateMode, serverState, status, save, syncFromServer };
+  return { content, templateMode, serverState, status, save, syncFromServer, syncNonce };
 }
