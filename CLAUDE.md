@@ -33,22 +33,30 @@ The person developing most of this is **non-technical**. That means:
 - `public/` — copied into the deploy as-is: `sw.js`, `manifest.json`,
   `icon.svg`. These are outside the password gate; no trip content ever.
 
-## Git workflow
+## Git workflow — the dev flow
 
-- **NEVER push or merge to `main` unless explicitly told to** ("deploy",
-  "push to main", "make it live", or similar). Netlify auto-deploys every
-  push to `main`, and prod deploys are limited on the free plan — so a push
-  to main IS a deploy and spends one.
-- Do work on a feature branch and merge it into **`staging`** when it's
-  ready. `staging` is where finished-but-not-deployed work accumulates;
-  deploying means merging `staging` (or the branch) into `main` — again,
-  only when asked.
-- **Test locally before deploying.** When asked to "test", "run locally",
-  or similar, start a local server (`npx netlify dev` for the full stack —
-  app + gate + trip-data function + local Blobs — or `npm run dev` for
-  UI-only) so the person can try it out.
+1. Make changes.
+2. **Push to `staging` freely** — no need to ask. Netlify builds a branch
+   deploy of every push to `staging`.
+3. **Then send the staging URL so the changes can be tested on a phone:**
+   https://staging--sparkly-lamington-19866c.netlify.app/
+   (same trip password as the live site).
+4. Repeat 1–3 until the person says they're satisfied.
+5. **Merge `staging` into `main` ONLY when explicitly told to** ("deploy",
+   "merge to main", "make it live", or similar). Netlify auto-deploys every
+   push to `main`, and prod deploys are limited on the free plan — so a
+   push to main IS a deploy and spends one. Never push main on your own.
+
+Notes:
+
+- **Staging shares the live site's trip data** — Netlify Blobs storage is
+  per-site, not per-branch. Edits made on the staging URL change the real
+  trip for everyone. Don't treat staging as a data sandbox.
 - No pull requests — plain merges.
 - Never force-push `main`.
+- If asked to "test locally" or "run locally", start a local server:
+  `npx netlify dev` for the full stack (app + gate + trip-data function +
+  local throwaway Blobs) or `npm run dev` for UI-only.
 - Every push gets typechecked twice: the `checks` GitHub Action runs
   `tsc --noEmit` + `vite build` on all branches, and the Netlify build runs
   the same thing — a TypeScript error can't reach the live site.
