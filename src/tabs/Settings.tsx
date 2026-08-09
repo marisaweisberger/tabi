@@ -16,8 +16,11 @@ export default function Settings({ content, save, status }: Props) {
   const [text, setText] = useState(() => JSON.stringify(content, null, 2));
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [copied, setCopied] = useState(false);
   const focused = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
+  const copyTimer = useRef<ReturnType<typeof setTimeout>>();
+  const areaRef = useRef<HTMLTextAreaElement>(null);
 
   // Keep the editor in sync with saves made elsewhere (other tabs, other
   // phones) — but never overwrite while someone is typing in it.
@@ -48,6 +51,24 @@ export default function Settings({ content, save, status }: Props) {
     }, 1200);
   };
 
+  const copyAll = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Older browsers: select everything in the textarea and use the legacy
+      // copy command instead.
+      const ta = areaRef.current;
+      if (!ta) return;
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      document.execCommand("copy");
+      ta.blur();
+    }
+    setCopied(true);
+    clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopied(false), 2000);
+  };
+
   // While someone is typing, only their own feedback (errors, "Saved…")
   // belongs here — background sync chatter would be misleading mid-edit.
   const showStatus = !isFocused || status.msg.startsWith("Saved");
@@ -62,7 +83,11 @@ export default function Settings({ content, save, status }: Props) {
         new version — and it saves and syncs to every phone by itself. Tip: paste this to Claude, describe the change,
         paste the result back.
       </p>
+      <button className="btn sm" style={{ marginTop: 0, marginBottom: 10 }} onClick={copyAll}>
+        {copied ? "Copied ✓" : "Copy it all"}
+      </button>
       <textarea
+        ref={areaRef}
         style={{ minHeight: 260 }}
         spellCheck={false}
         autoCapitalize="off"
