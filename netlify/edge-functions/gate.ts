@@ -45,8 +45,10 @@ form{background:#fff;border:1px solid #D8D2C4;border-radius:12px;padding:28px 24
 h1{font-size:22px;color:#22406B;margin:0 0 4px}
 h1 span{color:#C73E2E}
 p{font-size:13.5px;color:#5A6472;margin:0 0 18px}
-input{width:100%;box-sizing:border-box;border:1px solid #D8D2C4;border-radius:8px;padding:12px;font-size:16px;background:#FFFDF8;margin-bottom:12px}
+.pwrow{display:flex;gap:8px;margin-bottom:12px}
+input{flex:1;min-width:0;box-sizing:border-box;border:1px solid #D8D2C4;border-radius:8px;padding:12px;font-size:16px;background:#FFFDF8}
 button{width:100%;border:0;border-radius:8px;background:#22406B;color:#fff;font-size:15px;font-weight:600;padding:12px;cursor:pointer}
+.pwrow button{width:auto;flex-shrink:0;background:#E8EDF5;color:#22406B;font-size:13px;padding:0 14px}
 .err{color:#C73E2E;font-size:13px;margin:0 0 12px}
 </style>
 </head>
@@ -55,9 +57,23 @@ button{width:100%;border:0;border-radius:8px;background:#22406B;color:#fff;font-
   <h1><span>旅</span> Tabi</h1>
   <p>This trip is private — enter the trip password.</p>
   ${error ? `<p class="err">${error}</p>` : ""}
-  <input type="password" name="password" placeholder="Trip password" autofocus autocomplete="current-password">
+  <div class="pwrow">
+    <input type="password" id="pw" name="password" placeholder="Trip password" autofocus autocomplete="current-password">
+    <button type="button" id="pwtoggle" aria-pressed="false" aria-label="Show password">Show</button>
+  </div>
   <button type="submit">Open the trip</button>
 </form>
+<script>
+const pw=document.getElementById("pw"),tg=document.getElementById("pwtoggle");
+tg.addEventListener("click",()=>{
+ const show=pw.type==="password";
+ pw.type=show?"text":"password";
+ tg.textContent=show?"Hide":"Show";
+ tg.setAttribute("aria-pressed",String(show));
+ tg.setAttribute("aria-label",(show?"Hide":"Show")+" password");
+ pw.focus();
+});
+</script>
 </body>
 </html>`;
 }
