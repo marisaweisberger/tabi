@@ -35,10 +35,19 @@ The person developing most of this is **non-technical**. That means:
 
 ## Git workflow
 
-- **No pull requests. Merge work directly to `main`.** Netlify auto-deploys
-  every push to `main`, so a push to main IS a deploy to the live site.
-- Do feature work on a branch if you like, but finish by merging it into
-  `main` and pushing — don't leave work stranded on branches or open PRs.
+- **NEVER push or merge to `main` unless explicitly told to** ("deploy",
+  "push to main", "make it live", or similar). Netlify auto-deploys every
+  push to `main`, and prod deploys are limited on the free plan — so a push
+  to main IS a deploy and spends one.
+- Do work on a feature branch and merge it into **`staging`** when it's
+  ready. `staging` is where finished-but-not-deployed work accumulates;
+  deploying means merging `staging` (or the branch) into `main` — again,
+  only when asked.
+- **Test locally before deploying.** When asked to "test", "run locally",
+  or similar, start a local server (`npx netlify dev` for the full stack —
+  app + gate + trip-data function + local Blobs — or `npm run dev` for
+  UI-only) so the person can try it out.
+- No pull requests — plain merges.
 - Never force-push `main`.
 - Every push gets typechecked twice: the `checks` GitHub Action runs
   `tsc --noEmit` + `vite build` on all branches, and the Netlify build runs
