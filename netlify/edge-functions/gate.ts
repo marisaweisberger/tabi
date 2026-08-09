@@ -37,22 +37,22 @@ function loginPage(error = ""): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#22406B">
+<meta name="theme-color" content="#16294A">
 <title>Tabi</title>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#FAF7F0;color:#1C2430;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box}
-form{background:#fff;border:1px solid #E2DCCE;border-radius:16px;padding:32px 26px;max-width:340px;width:100%;text-align:center;box-shadow:0 1px 2px rgba(28,36,48,.06),0 14px 36px rgba(28,36,48,.09)}
-h1{font-size:24px;color:#22406B;margin:0 0 4px}
-h1 span{color:#C73E2E}
-p{font-size:13.5px;color:#5A6472;margin:0 0 20px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(165deg,#16294A 0%,#22406B 55%,#2E5288 100%);min-height:100vh;color:#1C2430;display:flex;align-items:center;justify-content:center;margin:0;padding:20px;box-sizing:border-box;position:relative;overflow:hidden}
+body::before{content:"旅";position:fixed;right:-30px;top:-50px;font-family:Georgia,serif;font-size:280px;line-height:1;color:#fff;opacity:.05;pointer-events:none}
+form{background:#fff;border:0;border-radius:22px;padding:36px 28px 32px;max-width:340px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35);position:relative}
+h1{font-size:26px;color:#22406B;margin:0 0 6px}
+h1 span{color:#C73E2E;font-size:30px;margin-right:2px}
+p{font-size:13.5px;color:#5A6472;margin:0 0 22px}
 .pwrow{display:flex;gap:8px;margin-bottom:12px}
-input{flex:1;min-width:0;box-sizing:border-box;border:1px solid #E2DCCE;border-radius:10px;padding:12px;font-size:16px;background:#FFFDF8;transition:border-color .15s,box-shadow .15s}
-input:focus{outline:none;border-color:#22406B;box-shadow:0 0 0 3px rgba(34,64,107,.14)}
-button{width:100%;border:0;border-radius:10px;background:#22406B;color:#fff;font-size:15px;font-weight:600;padding:12px;cursor:pointer;transition:background .15s,transform .1s}
-button:hover{background:#33568C}
-button:active{transform:scale(.98)}
-.pwrow button{width:auto;flex-shrink:0;background:#E9EEF6;color:#22406B;font-size:13px;padding:0 14px}
-.pwrow button:hover{background:#DFE7F2}
+input{flex:1;min-width:0;box-sizing:border-box;border:1px solid #E2DCCE;border-radius:12px;padding:13px;font-size:16px;background:#FDFCF8;transition:border-color .15s,box-shadow .15s}
+input:focus{outline:none;border-color:#22406B;box-shadow:0 0 0 3px rgba(34,64,107,.15)}
+button{width:100%;border:0;border-radius:999px;background:linear-gradient(135deg,#22406B,#33568C);color:#fff;font-size:15px;font-weight:600;padding:13px;cursor:pointer;box-shadow:0 4px 14px rgba(34,64,107,.3);transition:filter .15s,transform .1s}
+button:hover{filter:brightness(1.08)}
+button:active{transform:scale(.97)}
+.pwrow button{width:auto;flex-shrink:0;background:#E9EEF6;color:#22406B;font-size:13px;padding:0 16px;box-shadow:none}
 .err{color:#C73E2E;font-size:13px;margin:0 0 12px}
 </style>
 </head>
