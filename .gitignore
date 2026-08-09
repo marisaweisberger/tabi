@@ -7,6 +7,7 @@ trip-data.json
 # Netlify function dependencies
 node_modules/
 .netlify/
+deno.lock
 
 # Python
 __pycache__/
