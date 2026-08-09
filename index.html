@@ -89,14 +89,6 @@ main{max-width:640px;margin:0 auto;padding:16px}
 .addform{background:#fff;border:1px dashed var(--line);border-radius:10px;padding:12px;margin-top:14px}
 .addform input[type=text]{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13.5px;background:#FFFDF8;margin-bottom:8px}
 .addform label.chk{font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:8px}
-#inboxwrap{margin-bottom:14px}
-#inboxwrap h3{font-family:'Shippori Mincho',serif;color:var(--indigo);font-size:15px;margin-bottom:8px}
-.inbx{background:#F4F7F1;border:1px solid #CFDCC8;border-radius:10px;padding:10px 12px;margin-bottom:8px;position:relative}
-.inbx .s{font-weight:600;font-size:13.5px;padding-right:22px}
-.inbx .f{font-family:var(--mono);font-size:11px;color:#5A6472;margin-top:1px}
-.inbx .sn{font-size:12px;color:#5A6472;margin-top:4px;max-height:54px;overflow:hidden}
-.inbx a{color:var(--indigo);font-size:12px}
-.inbx .dis{position:absolute;top:6px;right:8px;border:0;background:none;cursor:pointer;color:#9AA795;font-size:14px;padding:4px}
 /* ---------- Stays ---------- */
 .stay{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;position:relative}
 .stay.unbooked{border-style:dashed;opacity:.75}
@@ -127,7 +119,7 @@ main{max-width:640px;margin:0 auto;padding:16px}
 .set-card textarea,.set-card input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:12px;background:#FFFDF8}
 .set-card textarea{min-height:120px;resize:vertical}
 .set-card .btn{margin-top:12px;margin-right:8px}
-#setstatus,#jsonstatus,#srvstatus{font-family:var(--mono);font-size:12px;margin-top:10px}
+#srvstatus{font-family:var(--mono);font-size:12px;margin-top:10px}
 .ok{color:var(--moss)}.err{color:var(--vermilion)}
 nav{position:fixed;bottom:0;left:0;right:0;z-index:10;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;border:0;background:none;font:inherit;cursor:pointer;padding:10px 0 8px;color:#8A93A0;font-size:11px;font-weight:500}
@@ -165,7 +157,6 @@ nav button.on .ic{color:var(--vermilion)}
 </section>
 
 <section id="tab-book" class="tab">
-  <div id="inboxwrap" style="display:none"><h3>📨 From Gmail</h3><div id="inboxlist"></div></div>
   <div id="progress"><span id="ptext"></span><div id="bar"><div></div></div></div>
   <div id="bklist"></div>
   <div class="addform">
@@ -195,30 +186,10 @@ nav button.on .ic{color:var(--vermilion)}
 
 <section id="tab-set" class="tab">
   <div class="set-card">
-    <h3>Server storage</h3>
-    <p>The trip lives in this site's own storage, behind the trip password — not in any code. Saving anything on any phone updates it, and opening the app pulls the latest. To hand the whole trip over at once, paste JSON into the editor below and hit save.</p>
-    <button class="btn" id="srvsave">Save to server now</button>
-    <button class="btn ghost" id="srvload">Load from server</button>
-    <div id="srvstatus"></div>
-  </div>
-  <div class="set-card">
-    <h3>Live sync (optional)</h3>
-    <p>Paste your Firebase config and pick a trip code. Same code on both phones = same trip. A new code starts a new trip.</p>
-    <label>Firebase config (JSON or the snippet from the console)</label>
-    <textarea id="fbconf" placeholder='{"apiKey":"...","databaseURL":"...", ...}'></textarea>
-    <label>Trip code</label>
-    <input id="fbtrip" placeholder="japan-2026">
-    <button class="btn" id="fbsave">Save & connect</button>
-    <button class="btn ghost" id="fboff">Turn sync off</button>
-    <div id="setstatus"></div>
-  </div>
-  <div class="set-card">
     <h3>Trip data</h3>
-    <p>The whole trip as editable JSON — itinerary, stays, bookings, food. Tip: paste this to Claude, describe the change, paste the result back. Saving syncs to every connected phone instantly.</p>
-    <textarea id="jsonedit" style="min-height:200px"></textarea>
-    <button class="btn" id="jsonsave">Save trip data</button>
-    <button class="btn ghost" id="jsonload">Reload current</button>
-    <div id="jsonstatus"></div>
+    <p>The whole trip as JSON, kept on the site's server behind the trip password. Edit it here — or paste a whole new version — and it saves and syncs to every phone by itself. Tip: paste this to Claude, describe the change, paste the result back.</p>
+    <textarea id="jsonedit" style="min-height:260px" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    <div id="srvstatus"></div>
   </div>
 </section>
 </main>
@@ -251,62 +222,13 @@ const raw={
 };
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-const LocalAdapter={
- name:"local",
- init(){return Promise.resolve()},
- get:k=>raw.get(k),set:(k,v)=>raw.set(k,v),onChange(cb){},
+// Per-device key-value storage (quick notes). The trip itself lives on the
+// server (see the Server storage section) with a localStorage offline copy.
+const store={
+ get:k=>raw.get(k),set:(k,v)=>raw.set(k,v),
  getContent(){const s=raw.get("tabi_content");return s?JSON.parse(s):null},
- setContent(c){raw.set("tabi_content",JSON.stringify(c))},
- onContentChange(cb){},onInbox(cb){}
+ setContent(c){raw.set("tabi_content",JSON.stringify(c))}
 };
-const FirebaseAdapter={
- name:"firebase",
- _kv:null,_content:null,_cache:{},_cb:null,_ccb:null,_icb:null,_lastContentStr:null,
- async init(config,trip){
-  await loadScript("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
-  await loadScript("https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js");
-  if(!firebase.apps.length) firebase.initializeApp(config);
-  const base=firebase.database().ref("trips/"+trip);
-  this._kv=base.child("kv");this._content=base.child("content");
-  return new Promise((res,rej)=>{
-   const to=setTimeout(()=>rej(new Error("Connection timed out — check databaseURL")),10000);
-   this._kv.once("value",snap=>{
-    clearTimeout(to);
-    this._cache=snap.val()||{};
-    this._kv.on("child_added",s=>this._recv(s));
-    this._kv.on("child_changed",s=>this._recv(s));
-    this._content.on("value",s=>{
-     const str=s.val();
-     if(str&&str!==this._lastContentStr){this._lastContentStr=str;if(this._ccb)this._ccb(JSON.parse(str));}
-    });
-    base.child("inbox").on("value",s=>{if(this._icb)this._icb(s.val()||{})});
-    res();
-   },err=>{clearTimeout(to);rej(err)});
-  });
- },
- _recv(snap){
-  const k=snap.key,v=snap.val();
-  if(this._cache[k]===v)return;
-  this._cache[k]=v;raw.set(k,v);
-  if(this._cb)this._cb(k,v);
- },
- get(k){const v=this._cache[k];return v!==undefined?v:raw.get(k)},
- set(k,v){this._cache[k]=v;raw.set(k,v);this._kv.child(k).set(v)},
- onChange(cb){this._cb=cb},
- getContent(){return this._lastContentStr?JSON.parse(this._lastContentStr):null},
- setContent(c){const str=JSON.stringify(c);this._lastContentStr=str;raw.set("tabi_content",str);this._content.set(str)},
- onContentChange(cb){this._ccb=cb},
- onInbox(cb){this._icb=cb}
-};
-function loadScript(src){
- return new Promise((res,rej)=>{
-  if(document.querySelector(`script[src="${src}"]`))return res();
-  const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("Failed to load "+src));
-  document.head.appendChild(s);
- });
-}
-
-let store=LocalAdapter;
 let CONTENT=null;
 let templateMode=false;
 let editing=null;      // day/region editing state
@@ -525,14 +447,14 @@ document.getElementById("ns-add").addEventListener("click",()=>{
 /* ---------- Bookings ---------- */
 function drawProgress(){
  const bks=CONTENT.bookings||[];
- const done=bks.filter(b=>store.get("bk_"+b.id)==="1").length;
+ const done=bks.filter(b=>b.done).length;
  document.getElementById("ptext").textContent=`${done} / ${bks.length} booked`;
  document.querySelector("#bar div").style.width=bks.length?(done/bks.length*100)+"%":"0";
 }
 function renderBookings(){
  bklist.innerHTML="";
  (CONTENT.bookings||[]).forEach(b=>{
-  const done=store.get("bk_"+b.id)==="1";
+  const done=!!b.done;
   const el=document.createElement("label");
   el.className="bk"+(done?" done":"");
   el.dataset.bk=b.id;
@@ -541,9 +463,9 @@ function renderBookings(){
    <div class="m">${esc(b.m)}</div></div>
    <button class="del" aria-label="Delete ${esc(b.t)}">✕</button>`;
   el.querySelector("input").addEventListener("change",e=>{
-   store.set("bk_"+b.id,e.target.checked?"1":"0");
+   b.done=e.target.checked;
    el.classList.toggle("done",e.target.checked);
-   drawProgress();
+   saveContent();drawProgress();
   });
   el.querySelector(".del").addEventListener("click",e=>{
    e.preventDefault();
@@ -563,44 +485,6 @@ document.getElementById("nbadd").addEventListener("click",()=>{
  document.getElementById("nbt").value="";document.getElementById("nbm").value="";document.getElementById("nbu").checked=false;
  saveContent();renderBookings();
 });
-function applyRemote(k,v){
- if(k.startsWith("bk_")){
-  const el=bklist.querySelector(`[data-bk="${k.slice(3)}"]`);
-  if(el){el.querySelector("input").checked=(v==="1");el.classList.toggle("done",v==="1");}
-  drawProgress();
- }else if(k.startsWith("qn_")){
-  const ta=rail.querySelector(`textarea[data-key="${k}"]`);
-  if(ta&&document.activeElement!==ta){
-   ta.value=v||"";
-   ta.closest(".qnote").classList.toggle("has",!!(v||"").trim());
-  }
- }
-}
-
-/* ---------- Gmail inbox feed ---------- */
-function renderInbox(items){
- const wrap=document.getElementById("inboxwrap");
- const list=document.getElementById("inboxlist");
- const arr=Object.values(items||{})
-  .filter(it=>store.get("seen_"+it.id)!=="1")
-  .sort((a,b)=>(b.date||"").localeCompare(a.date||""));
- if(!arr.length){wrap.style.display="none";return}
- wrap.style.display="block";
- list.innerHTML=arr.map(it=>
-  `<div class="inbx"><button class="dis" data-dismiss="${esc(it.id)}" aria-label="Dismiss">✕</button>
-   <div class="s">${esc(it.subject)}</div>
-   <div class="f">${esc(it.from)} · ${esc((it.date||"").slice(0,10))}</div>
-   <div class="sn">${esc(it.snippet)}</div>
-   <a href="${esc(it.gmailLink)}" target="_blank" rel="noopener">Open in Gmail</a></div>`).join("");
-}
-document.addEventListener("click",e=>{
- if(e.target.dataset&&e.target.dataset.dismiss){
-  store.set("seen_"+e.target.dataset.dismiss,"1");
-  e.target.closest(".inbx").remove();
-  if(!document.querySelectorAll(".inbx").length)document.getElementById("inboxwrap").style.display="none";
- }
-});
-
 /* ---------- Food ---------- */
 function renderFood(){
  document.getElementById("foodlist").innerHTML=(CONTENT.food||[]).map(f=>
@@ -689,31 +573,46 @@ function loadContent(){
  let c=null;
  try{c=store.getContent()}catch(e){}
  if(!c){const cached=raw.get("tabi_content");if(cached){try{c=JSON.parse(cached)}catch(e){}}}
- if(c){CONTENT=c;templateMode=false}
+ let migrated=false;
+ if(c){
+  // One-time migration: checkmarks used to live per-device under bk_* keys;
+  // now they're part of the shared trip (b.done) so they sync too.
+  (c.bookings||[]).forEach(b=>{
+   if(b.done===undefined&&raw.get("bk_"+b.id)==="1"){b.done=true;migrated=true}
+  });
+  CONTENT=c;templateMode=false;
+ }
  else{CONTENT=JSON.parse(JSON.stringify(TEMPLATE));templateMode=true}
  renderAll();
+ if(migrated)saveContent();
 }
 document.getElementById("seedbtn").addEventListener("click",()=>{saveContent();renderAll()});
-document.getElementById("jsonload").addEventListener("click",()=>{
- document.getElementById("jsonedit").value=JSON.stringify(CONTENT,null,2);
- setJsonStatus("Loaded current trip data.",true);
+
+// The JSON editor saves itself: once you stop typing, valid JSON is adopted
+// and synced; invalid JSON just shows what's wrong and nothing is touched.
+const jsonta=document.getElementById("jsonedit");
+let jsonTimer=null;
+jsonta.addEventListener("input",()=>{
+ clearTimeout(jsonTimer);
+ jsonTimer=setTimeout(()=>{
+  let c;
+  try{c=JSON.parse(jsonta.value)}
+  catch(e){return setSrvStatus("Not valid JSON yet — nothing saved. ("+e.message+")",false)}
+  if(!c||typeof c!=="object"||!Array.isArray(c.regions))
+   return setSrvStatus('Trip data needs at least a "regions" array — nothing saved.',false);
+  CONTENT=c;saveContent();renderAll();
+ },1200);
 });
-document.getElementById("jsonsave").addEventListener("click",()=>{
- let c;
- try{c=JSON.parse(document.getElementById("jsonedit").value)}
- catch(e){return setJsonStatus("Not valid JSON: "+e.message,false)}
- if(!c||typeof c!=="object"||!Array.isArray(c.regions))
-  return setJsonStatus("Trip data needs at least a \"regions\" array.",false);
- CONTENT=c;saveContent();renderAll();
- setJsonStatus("Saved — synced to all connected phones.",true);
-});
-function setJsonStatus(m,ok){const el=document.getElementById("jsonstatus");el.textContent=m;el.className=ok?"ok":"err"}
 
 /* ---------- Server storage (Netlify Blobs via /api/trip-data) ---------- */
 const SERVER_URL="/api/trip-data";
 let serverState="checking"; // "checking" | "on" | "off"
 let pushTimer=null;
-function setSrvStatus(m,ok){const el=document.getElementById("srvstatus");el.textContent=m;el.className=ok===undefined?"":(ok?"ok":"err")}
+function setSrvStatus(m,ok){
+ // Don't overwrite feedback (like a JSON error) while someone is mid-edit
+ if(document.activeElement===jsonta&&!m.startsWith("Not valid")&&!m.startsWith("Trip data")&&!m.startsWith("Saved"))return;
+ const el=document.getElementById("srvstatus");el.textContent=m;el.className=ok===undefined?"":(ok?"ok":"err");
+}
 function pushToServer(){
  clearTimeout(pushTimer);
  pushTimer=setTimeout(async()=>{
@@ -725,7 +624,10 @@ function pushToServer(){
   }catch(e){setSrvStatus("Offline — changes saved on this phone; hit “Save to server now” when you're back online.",false);}
  },800);
 }
+let syncing=false;
 async function initServerSync(){
+ if(syncing)return;
+ syncing=true;
  try{
   const r=await fetch(SERVER_URL,{headers:{Accept:"application/json"}});
   const isJson=(r.headers.get("content-type")||"").includes("json");
@@ -746,22 +648,9 @@ async function initServerSync(){
   setSrvStatus("Connected — trip data lives on the server.",true);
  }catch(e){
   serverState="off";
-  setSrvStatus("Server storage not reachable (offline, or deployed without functions) — using this phone's copy.",false);
- }
+  setSrvStatus("Server not reachable (offline?) — using this phone's copy for now.",false);
+ }finally{syncing=false}
 }
-document.getElementById("srvsave").addEventListener("click",()=>{setSrvStatus("Saving…");saveContent()});
-document.getElementById("srvload").addEventListener("click",async()=>{
- try{
-  const r=await fetch(SERVER_URL,{headers:{Accept:"application/json"}});
-  if(r.status===404)return setSrvStatus("Nothing on the server yet.",false);
-  if(!r.ok)return setSrvStatus("Couldn't load ("+r.status+") — try reloading the app.",false);
-  const server=await r.json();
-  if(!templateMode&&!confirm("Replace the trip on this phone with the server copy?"))return;
-  store.setContent(server);
-  adoptContent(server);
-  setSrvStatus("Loaded the server copy.",true);
- }catch(e){setSrvStatus("Couldn't reach the server — offline?",false)}
-});
 
 /* ---------- Tabs ---------- */
 document.querySelectorAll("nav button").forEach(btn=>{
@@ -774,59 +663,19 @@ document.querySelectorAll("nav button").forEach(btn=>{
  });
 });
 
-/* ---------- Sync settings ---------- */
-const statusEl=document.getElementById("setstatus");
-const dot=document.getElementById("syncdot");
-function setStatus(m,ok){statusEl.textContent=m;statusEl.className=ok?"ok":"err"}
-function parseConfig(text){
- let t=text.trim().replace(/^const\s+\w+\s*=\s*/,"").replace(/;\s*$/,"");
- try{return JSON.parse(t)}catch(e){}
- t=t.replace(/([{,]\s*)([A-Za-z_$][\w$]*)\s*:/g,'$1"$2":').replace(/,\s*([}\]])/g,"$1");
- return JSON.parse(t);
-}
-async function connectFirebase(config,trip){
- setStatus("Connecting…",true);
- await FirebaseAdapter.init(config,trip);
- store=FirebaseAdapter;
- store.onChange(applyRemote);
- store.onContentChange(adoptContent);
- store.onInbox(renderInbox);
- loadContent();
- dot.classList.add("on");
- document.getElementById("bkhint").textContent="Everything on this trip syncs live — edits, checkmarks, and notes.";
- setStatus("Connected — trip \""+trip+"\"",true);
-}
-document.getElementById("fbsave").addEventListener("click",async()=>{
- let config;
- try{config=parseConfig(document.getElementById("fbconf").value)}
- catch(e){return setStatus("Couldn't read that config — paste the snippet from the Firebase console (with or without the surrounding code).",false)}
- const trip=(document.getElementById("fbtrip").value.trim()||"my-trip").replace(/[.#$\[\]\/\s]/g,"-");
- if(!config.databaseURL)return setStatus("Config is missing databaseURL — enable Realtime Database in Firebase first.",false);
- try{
-  await connectFirebase(config,trip);
-  raw.set("tabi_sync",JSON.stringify({config,trip}));
- }catch(e){setStatus("Couldn't connect: "+e.message,false)}
-});
-document.getElementById("fboff").addEventListener("click",()=>{
- raw.del("tabi_sync");
- setStatus("Sync off — reload the app to finish switching back to device-only storage.",true);
-});
-
 /* ---------- Boot ---------- */
-document.getElementById("bkhint").textContent="Checkmarks and quick notes live on this device only. Turn on live sync in Settings to share those too.";
+const dot=document.getElementById("syncdot");
+document.getElementById("bkhint").textContent="Checkmarks sync to every phone. Quick notes on days stay on yours.";
 loadContent();
 initServerSync();
-(function(){
- const saved=raw.get("tabi_sync");
- if(saved){
-  try{
-   const {config,trip}=JSON.parse(saved);
-   document.getElementById("fbconf").value=JSON.stringify(config);
-   document.getElementById("fbtrip").value=trip;
-   connectFirebase(config,trip).catch(e=>setStatus("Sync reconnect failed (offline?). Using cached data: "+e.message,false));
-  }catch(e){}
- }
-})();
+// Pull the latest whenever the app comes back into view…
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible")initServerSync();
+});
+// …and every 30s while someone is looking at the Settings JSON.
+setInterval(()=>{
+ if(document.visibilityState==="visible"&&document.getElementById("tab-set").classList.contains("active"))initServerSync();
+},30000);
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 </script>
 </body>

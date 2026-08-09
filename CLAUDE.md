@@ -60,8 +60,10 @@ deploy isn't bricked — don't "fix" that. Files excluded from the gate
   function. Don't add dependencies casually.
 - Client saves stamp `CONTENT._updatedAt`; the newest copy wins when the app
   and server disagree. Keep that behavior if you touch sync code.
-- Firebase live sync (Settings) is optional and user-configured at runtime —
-  code changes shouldn't require it, and its config is never in the repo.
+- There are deliberately NO save/load/sync buttons — everything auto-saves
+  (debounced) and auto-refreshes on focus. Don't add buttons back.
+- Firebase sync was removed on purpose (server storage replaced it). Don't
+  reintroduce it.
 
 ## Checking your work
 

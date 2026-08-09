@@ -1,7 +1,8 @@
 # Tabi 旅
 
 A shared trip command center for Japan, September–October 2026. Installable as a
-phone app (PWA), works offline, and optionally syncs live between two phones.
+phone app (PWA), works offline, and stays in sync between phones through the
+site's own server storage.
 
 Live at https://sparkly-lamington-19866c.netlify.app
 
@@ -11,12 +12,11 @@ Live at https://sparkly-lamington-19866c.netlify.app
   and transit legs. Everything is editable in place.
 - **Stays** — hotels and ryokan with addresses, confirmation numbers, and
   check-in rules. Unbooked stays show dashed.
-- **Bookings** — checklist with a progress bar, plus an optional Gmail feed.
+- **Bookings** — checklist with a progress bar; checkmarks sync to everyone.
 - **Food** — dishes to eat, by region.
 - **Currency** — ¥ ⇄ $ converter with a live rate (cached 6 hours, falls back to
   the last known rate when offline).
-- **Settings** — server storage, Firebase live sync, and the whole trip as
-  editable JSON.
+- **Settings** — the whole trip as one auto-saving JSON editor.
 
 ## Files
 
@@ -31,8 +31,8 @@ Live at https://sparkly-lamington-19866c.netlify.app
 | `icon.svg` | App icon — a torii gate |
 | `package.json` | Only exists so Netlify installs `@netlify/blobs` for the function |
 
-No build step. Firebase is loaded from a CDN at runtime only if you turn live
-sync on.
+No build step, no frameworks, one dependency (`@netlify/blobs`, server-side
+only).
 
 ## How data is stored
 
@@ -45,16 +45,21 @@ is served by `/api/trip-data`. It is **never in this public repo**.
 - Saving anything in the app pushes the whole trip back up automatically.
 - Each phone also keeps a copy in `localStorage`, so the app works offline;
   it re-syncs the next time a save happens online.
-- Checkmarks and quick notes stay per-device unless Firebase live sync is on.
+- Booking checkmarks are part of the trip JSON, so they sync too. Quick notes
+  on days are personal and stay per-device.
 
 ### Putting the trip content in (no git involved)
 
 Pick whichever is easiest:
 
-1. **In the app** — just edit things. Every save goes to the server.
-2. **Paste JSON** — Settings → Trip data → paste the whole trip JSON → Save.
-   (Tip in the app: paste the JSON to Claude, describe the change, paste the
-   result back.) See `trip-data.example.json` for the shape.
+1. **In the app** — just edit things. Every change saves to the server on its
+   own; there are no save buttons anywhere.
+2. **Paste JSON** — Settings → Trip data → paste the whole trip JSON over
+   what's there. It validates and saves itself as soon as you stop typing.
+   (Tip: paste the JSON to Claude, describe the change, paste the result
+   back.) See `trip-data.example.json` for the shape. Other phones pick up
+   changes when the app is opened or brought back on screen, and every 30
+   seconds while Settings is open.
 3. **From a terminal** —
    ```bash
    curl -X POST -H "Content-Type: application/json" \

@@ -1,11 +1,11 @@
-// Tabi service worker — v14
+// Tabi service worker — v15
 // NETWORK-FIRST for the app shell so redeploys reach phones on next launch,
 // cache fallback for offline. Cache-first only for static font CDNs.
-// API traffic (/api/*, /login, Firebase, exchange rates) is never intercepted,
+// API traffic (/api/*, /login, exchange rates) is never intercepted,
 // and non-OK responses (like the password page's 401) are never cached.
-const CACHE = "tabi-v14";
+const CACHE = "tabi-v15";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icon.svg"];
-const STATIC_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com", "www.gstatic.com"];
+const STATIC_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
@@ -42,5 +42,5 @@ self.addEventListener("fetch", (e) => {
         }))
     );
   }
-  // Everything else (Firebase, exchange-rate APIs): straight to network, untouched.
+  // Everything else (exchange-rate APIs): straight to network, untouched.
 });
