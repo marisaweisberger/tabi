@@ -143,10 +143,21 @@ export default function Itinerary({ regions, save, syncNonce }: Props) {
   // null = default (first region open); afterwards open regions are tracked by name.
   const [open, setOpen] = useState<Set<string> | null>(null);
   const [editing, setEditing] = useState<Editing>(null);
+  const [query, setQuery] = useState("");
 
   // A newer copy from the server may have reordered or removed things, so an
   // open editor could save over the wrong day/region — close it instead.
   useEffect(() => setEditing(null), [syncNonce]);
+
+  // While searching, every region with a hit is forced open so results are visible.
+  const q = query.trim().toLowerCase();
+  const has = (s?: string) => !!s && s.toLowerCase().includes(q);
+  const dayMatches = (d: Day) =>
+    has(d.d) ||
+    has(d.p) ||
+    has(d.n) ||
+    has(d.q) ||
+    (d.transit || []).some((l) => has(l.from) || has(l.to) || has(l.via) || has(l.time) || has(l.note));
 
   const isOpen = (r: Region, ri: number) => (open ? open.has(r.name) : ri === 0);
 
@@ -209,11 +220,37 @@ export default function Itinerary({ regions, save, syncNonce }: Props) {
     setEditing("region_" + regions.length);
   };
 
+  // With a search on: a region whose name/dates match shows all its days;
+  // otherwise it shows only matching days, and disappears if it has none.
+  const shown = regions.map((r, ri) => {
+    if (!q) return { r, ri, headMatch: true, days: null as boolean[] | null };
+    const headMatch = has(r.name) || has(r.dates);
+    const days = (r.days || []).map(dayMatches);
+    return { r, ri, headMatch, days };
+  }).filter((x) => x.headMatch || (x.days && x.days.some(Boolean)));
+
   return (
+    <>
+      <div className="searchbar">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search the itinerary — places, plans, notes…"
+          aria-label="Search the itinerary"
+          enterKeyHint="search"
+        />
+        {query && (
+          <button className="clear" aria-label="Clear search" onClick={() => setQuery("")}>
+            ✕
+          </button>
+        )}
+      </div>
+      {q && shown.length === 0 && <div className="search-empty">No matches for “{query.trim()}”</div>}
     <div className="rail">
-      {regions.map((r, ri) => (
-        <div key={ri} className={"station" + (r.transfer ? " transfer" : "") + (isOpen(r, ri) ? " open" : "")}>
-          <button className="region-head" aria-expanded={isOpen(r, ri)} onClick={() => toggle(r)}>
+      {shown.map(({ r, ri, headMatch, days: dayHits }) => (
+        <div key={ri} className={"station" + (r.transfer ? " transfer" : "") + (q || isOpen(r, ri) ? " open" : "")}>
+          <button className="region-head" aria-expanded={!!q || isOpen(r, ri)} onClick={() => toggle(r)}>
             <div>
               <h2>{r.name}</h2>
               <span className="dates">{r.dates}</span>
@@ -244,7 +281,7 @@ export default function Itinerary({ regions, save, syncNonce }: Props) {
               />
             )}
             {(r.days || []).map((d, di) =>
-              editing === ri + "_" + di ? (
+              q && !headMatch && dayHits && !dayHits[di] ? null : editing === ri + "_" + di ? (
                 <div key={di} className="day">
                   <DayEditor
                     day={d}
@@ -294,15 +331,20 @@ export default function Itinerary({ regions, save, syncNonce }: Props) {
                 />
               </div>
             )}
-            <button className="addday" onClick={() => setEditing("newday_" + ri)}>
-              + Add a day to {r.name}
-            </button>
+            {!q && (
+              <button className="addday" onClick={() => setEditing("newday_" + ri)}>
+                + Add a day to {r.name}
+              </button>
+            )}
           </div>
         </div>
       ))}
-      <button className="addday" onClick={addRegion}>
-        + Add a region (a new city or leg)
-      </button>
+      {!q && (
+        <button className="addday" onClick={addRegion}>
+          + Add a region (a new city or leg)
+        </button>
+      )}
     </div>
+    </>
   );
 }
