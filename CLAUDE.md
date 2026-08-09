@@ -23,7 +23,8 @@ The person developing most of this is **non-technical**. That means:
 - `src/types.ts` — the shape of the trip JSON. Change it here first; the
   typechecker then points at every place that needs updating.
 - `src/storage.ts` — localStorage keys (unchanged from the old app so
-  nobody's phone loses data): `tabi_content`, `qn_*`, `fx_rate`.
+  nobody's phone loses data): `tabi_content`, `fx_rate`. (Legacy per-device
+  `qn_*` quick notes and `bk_*` checkmarks migrate into the shared trip.)
 - `src/useTrip.ts` — ALL sync logic: load, auto-save (debounced), push to
   the server, pull on focus, newest-`_updatedAt`-wins. Touch with care.
 - `src/App.tsx` — header, tab switching, bottom nav.

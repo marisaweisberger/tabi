@@ -27,7 +27,7 @@ Live at https://sparkly-lamington-19866c.netlify.app
 | `src/tabs/` | One file per tab: Itinerary, Stays, Bookings, Food, Currency, Settings |
 | `src/useTrip.ts` | All sync logic: auto-save, server push/pull, newest-copy-wins |
 | `src/types.ts` | TypeScript shape of the trip JSON |
-| `src/storage.ts` | localStorage helpers (offline copy, quick notes, cached fx rate) |
+| `src/storage.ts` | localStorage helpers (offline copy, cached fx rate) |
 | `src/index.css` | All styles — plain CSS |
 | `public/` | Copied to the site root as-is: `sw.js`, `manifest.json`, `icon.svg` |
 | `netlify/edge-functions/gate.ts` | Password gate for the whole site (see below) |
@@ -50,8 +50,8 @@ is served by `/api/trip-data`. It is **never in this public repo**.
 - Saving anything in the app pushes the whole trip back up automatically.
 - Each phone also keeps a copy in `localStorage`, so the app works offline;
   it re-syncs the next time a save happens online.
-- Booking checkmarks are part of the trip JSON, so they sync too. Quick notes
-  on days are personal and stay per-device.
+- Booking checkmarks and quick notes on days are part of the trip JSON, so
+  they sync too.
 
 ### Putting the trip content in (no git involved)
 

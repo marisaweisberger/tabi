@@ -71,7 +71,7 @@ export default function Bookings({ bookings, save }: Props) {
         </label>
         <button className="btn" onClick={addBooking}>Add booking</button>
       </div>
-      <p className="hint">Checkmarks sync to every phone. Quick notes on days stay on yours.</p>
+      <p className="hint">Checkmarks sync to every phone, and so do quick notes on days.</p>
     </>
   );
 }

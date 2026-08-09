@@ -17,6 +17,8 @@ export interface Day {
   p: string;
   /** Optional highlighted note */
   n?: string;
+  /** Quick note — free-form, synced to everyone like the rest of the trip */
+  q?: string;
   transit?: TransitLeg[];
 }
 

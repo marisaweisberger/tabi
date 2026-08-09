@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Day, Region, TransitLeg } from "../types";
 import type { SaveFn } from "../useTrip";
-import { raw } from "../storage";
 
 // Regions on the train-rail timeline, each with editable days.
-// Trip edits go through save() and sync to everyone; quick notes on days are
-// personal and stay on this device (localStorage, key qn_<region>_<day>).
+// Everything — including each day's quick note — goes through save() and
+// syncs to every phone.
 
 interface Props {
   regions: Region[];
@@ -105,17 +104,35 @@ function RegionEditor(props: { region: Region; onSave: (r: Region) => void; onCa
   );
 }
 
-function QuickNote(props: { storageKey: string }) {
-  const [text, setText] = useState(() => raw.get(props.storageKey) || "");
+// A day's free-form note. Auto-saves (debounced, flushed on blur) into the
+// shared trip, so it syncs to every phone. While the box is focused it shows
+// what's being typed; otherwise it follows the synced value.
+function QuickNote(props: { value: string; onSave: (v: string) => void }) {
+  const [text, setText] = useState(props.value);
+  const [isFocused, setIsFocused] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (!isFocused) setText(props.value);
+  }, [props.value, isFocused]);
+
   return (
     <details className={"qnote" + (text.trim() ? " has" : "")}>
       <summary>quick note</summary>
       <textarea
         value={text}
-        placeholder="On-the-ground notes"
+        placeholder="On-the-ground notes — synced to everyone"
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => {
+          setIsFocused(false);
+          clearTimeout(timer.current);
+          if (text !== props.value) props.onSave(text);
+        }}
         onChange={(e) => {
-          setText(e.target.value);
-          raw.set(props.storageKey, e.target.value);
+          const v = e.target.value;
+          setText(v);
+          clearTimeout(timer.current);
+          timer.current = setTimeout(() => props.onSave(v), 800);
         }}
       />
     </details>
@@ -162,6 +179,25 @@ export default function Itinerary({ regions, save, syncNonce }: Props) {
     if (!confirm("Delete this day for everyone on the trip?")) return;
     saveRegions((cur) => cur.map((r, i) => (i === ri ? { ...r, days: (r.days || []).filter((_, x) => x !== di) } : r)));
   };
+
+  // Write a day's quick note in place — no editor involved, so no setEditing.
+  const saveQuickNote = (ri: number, di: number, v: string) =>
+    save((c) => ({
+      ...c,
+      regions: (c.regions || []).map((r, i) => {
+        if (i !== ri) return r;
+        return {
+          ...r,
+          days: (r.days || []).map((d, x) => {
+            if (x !== di) return d;
+            const next = { ...d };
+            if (v.trim()) next.q = v;
+            else delete next.q;
+            return next;
+          }),
+        };
+      }),
+    }));
 
   const deleteRegion = (ri: number) => {
     if (!confirm(`Delete the whole "${regions[ri].name}" region and its days for everyone?`)) return;
@@ -244,7 +280,7 @@ export default function Itinerary({ regions, save, syncNonce }: Props) {
                       ))}
                     </div>
                   )}
-                  <QuickNote storageKey={`qn_${ri}_${di}`} />
+                  <QuickNote value={d.q || ""} onSave={(v) => saveQuickNote(ri, di, v)} />
                 </div>
               ),
             )}
