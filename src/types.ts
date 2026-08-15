@@ -64,6 +64,18 @@ export interface Stay {
   notes?: string;
 }
 
+/** One line on a tickable list — used by both the Shopping and Packing tabs. */
+export interface ListItem {
+  id: string;
+  /** What it is */
+  t: string;
+  /** Notes — where to buy it, what to look for, why it matters */
+  m?: string;
+  /** Group heading: a Tokyo area for shopping, a category for packing */
+  g?: string;
+  done?: boolean;
+}
+
 export interface TripContent {
   title?: string;
   /** ISO date, e.g. "2026-09-13" */
@@ -72,6 +84,10 @@ export interface TripContent {
   bookings?: Booking[];
   food?: FoodRegion[];
   stays?: Stay[];
+  /** Things to buy in Japan, grouped by where to buy them */
+  shopping?: ListItem[];
+  /** Packing checklist, grouped by category */
+  packing?: ListItem[];
   /** Stamped on every save; the newest copy wins between phones and server */
   _updatedAt?: number;
 }

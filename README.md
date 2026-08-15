@@ -14,6 +14,11 @@ Live at https://sparkly-lamington-19866c.netlify.app
   check-in rules. Unbooked stays show dashed.
 - **Bookings** — checklist with a progress bar; checkmarks sync to everyone.
 - **Food** — dishes to eat, by region.
+- **Shopping** — practical things worth buying in Japan, grouped by the part of
+  Tokyo you buy them in, so a heading lines up with a day on the itinerary.
+  Tickable, with a suggested list to start from.
+- **Packing** — the same checklist, grouped by category instead. Tap ✎ on any
+  line to add your own details (glasses prescription, sizes, medication).
 - **Currency** — ¥ ⇄ $ converter with a live rate (cached 6 hours, falls back to
   the last known rate when offline).
 - **Settings** — the whole trip as one auto-saving JSON editor.
@@ -24,7 +29,8 @@ Live at https://sparkly-lamington-19866c.netlify.app
 | --- | --- |
 | `index.html` | Entry page (fonts, meta tags); mounts the React app |
 | `src/App.tsx` | Header, tab switching, bottom nav |
-| `src/tabs/` | One file per tab: Itinerary, Stays, Bookings, Food, Currency, Settings |
+| `src/tabs/` | One file per tab: Itinerary, Stays, Bookings, Food, Shopping, Packing, Currency, Settings (Shopping and Packing share `Checklist.tsx`) |
+| `src/lists.ts` | The suggested shopping and packing lists offered when those tabs are empty |
 | `src/useTrip.ts` | All sync logic: auto-save, server push/pull, newest-copy-wins |
 | `src/types.ts` | TypeScript shape of the trip JSON |
 | `src/storage.ts` | localStorage helpers (offline copy, cached fx rate) |

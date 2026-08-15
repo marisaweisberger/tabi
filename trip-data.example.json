@@ -29,5 +29,11 @@
   ],
   "stays": [
     { "name": "Hotel name", "dates": "Sep 13–17 · 4 nights", "address": "Street, city", "conf": "", "notes": "Check-in time, deadlines. Blank conf = shows as NOT BOOKED." }
+  ],
+  "shopping": [
+    { "id": "s01", "g": "Heading — where to buy it", "t": "What to buy", "m": "Which shop, what to look for, rough price.", "done": false }
+  ],
+  "packing": [
+    { "id": "p01", "g": "Heading — a category", "t": "What to pack", "m": "Any detail worth remembering.", "done": false }
   ]
 }

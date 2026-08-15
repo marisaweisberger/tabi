@@ -30,9 +30,9 @@ export default function Bookings({ bookings, save }: Props) {
 
   return (
     <>
-      <div id="progress">
+      <div className="progress">
         <span>{done} / {bookings.length} booked</span>
-        <div id="bar">
+        <div className="bar">
           <div style={{ width: bookings.length ? (done / bookings.length) * 100 + "%" : 0 }} />
         </div>
       </div>

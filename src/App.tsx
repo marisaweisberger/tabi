@@ -4,6 +4,8 @@ import Itinerary from "./tabs/Itinerary";
 import Stays from "./tabs/Stays";
 import Bookings from "./tabs/Bookings";
 import Food from "./tabs/Food";
+import Shopping from "./tabs/Shopping";
+import Packing from "./tabs/Packing";
 import Currency from "./tabs/Currency";
 import Settings from "./tabs/Settings";
 
@@ -12,6 +14,8 @@ const TABS = [
   { id: "stay", icon: "🏨", label: "Stays" },
   { id: "book", icon: "📋", label: "Bookings" },
   { id: "food", icon: "🍜", label: "Food" },
+  { id: "shop", icon: "🛍️", label: "Shopping" },
+  { id: "pack", icon: "🧳", label: "Packing" },
   { id: "fx", icon: "💴", label: "Currency" },
   { id: "set", icon: "⚙️", label: "Settings" },
 ] as const;
@@ -93,6 +97,20 @@ export default function App() {
             Food <span>食</span>
           </h2>
           <Food food={content.food || []} />
+        </section>
+
+        <section className={"tab" + (tab === "shop" ? " active" : "")}>
+          <h2 className="page-title">
+            Shopping <span>買物</span>
+          </h2>
+          <Shopping shopping={content.shopping || []} save={trip.save} />
+        </section>
+
+        <section className={"tab" + (tab === "pack" ? " active" : "")}>
+          <h2 className="page-title">
+            Packing <span>荷造</span>
+          </h2>
+          <Packing packing={content.packing || []} save={trip.save} />
         </section>
 
         <section className={"tab" + (tab === "fx" ? " active" : "")}>
